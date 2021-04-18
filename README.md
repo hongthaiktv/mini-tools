@@ -9,7 +9,7 @@ Syntax: tmenu [default] [option 1] [option 2]... [option n]
 ```
 
 `--color` : Set color option for tmenu.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (--color with no argument to set default).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (--color with no argument to set default color).
 
 `-s`	: Silent - Do not echo message to terminal.
 

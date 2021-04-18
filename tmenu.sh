@@ -39,7 +39,7 @@ Syntax: tmenu [default] [option 1] [option 2]... [option n]
         tmenu --color -s [OPTION SELECTED ARROW] color code.
 
 --color	: Set color option for tmenu.
-	  (--color with no argument to set default).
+	  (--color with no argument to set default color).
 -s	: Silent - Do not echo message to terminal.
 --help	: This help screen.
 
