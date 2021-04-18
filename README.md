@@ -8,7 +8,7 @@ Syntax: tmenu [default] [option 1] [option 2]... [option n]
         tmenu --color -s [OPTION SELECTED ARROW] color code.
 ```
 
-<p>--color	: Set color option for tmenu.\n
+<p>--color	: Set color option for tmenu.<br>
 	  (--color with no argument to set default).</p>
 
 -s	: Silent - Do not echo message to terminal.
