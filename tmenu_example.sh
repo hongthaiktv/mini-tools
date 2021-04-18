@@ -5,6 +5,7 @@ tmenu --help
 tmenu --color -s 33 41 96
 tmenu "option 1" "option 2" "option 3" "option 4"
 echo "You select $TMENU_RESULT."
+
 echo
 
 tmenu --color

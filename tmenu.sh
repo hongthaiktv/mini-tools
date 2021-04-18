@@ -14,22 +14,23 @@ tmenu() {
 unset TMENU_RESULT
 printf "\033[?25l"
 
+tmenu.color() {
+  MENU_OPTION_COLOR=${1:-2}
+  MENU_SELECTED_COLOR=${2:-46}
+  MENU_ARROW_COLOR=${3:-91}
+}
+
 if [ "$1" = "--color" ]
   then
     if [ "$2" = "-s" ]
       then
-        MENU_OPTION_COLOR=${3:-2}
-        MENU_SELECTED_COLOR=${4:-46}
-        MENU_ARROW_COLOR=${5:-91}
-        return
+        tmenu.color "$3" "$4" "$5"
       else
-        MENU_OPTION_COLOR=${2:-2}
-        MENU_SELECTED_COLOR=${3:-46}
-        MENU_ARROW_COLOR=${4:-91}
+        tmenu.color "$2" "$3" "$4"
         echo "Menu color changed to '$MENU_OPTION_COLOR $MENU_SELECTED_COLOR $MENU_ARROW_COLOR'."
         echo
-        return
     fi
+    return
 
 elif [ "$1" = "--help" ]
   then
@@ -44,6 +45,7 @@ Syntax: tmenu [default] [option 1] [option 2]... [option n]
 
 Exp: tmenu 'tmenu' 'tmenu' 'so' 'cool'
 Will generate menu with 3 option and select 'tmenu' option as default.
+If no default argument, first option will be set as default.
 Press 'q' to quit tmenu.
 
 Variable:
