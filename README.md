@@ -1,7 +1,7 @@
 # Mini tools
 
-tmenu - Linux Bash terminal menu generation
-------------------------------------
+## tmenu - Linux Bash terminal menu generation
+
 
 ```
 Syntax: tmenu [default] [option 1] [option 2]... [option n]
