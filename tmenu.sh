@@ -27,6 +27,7 @@ if [ "$1" = "--color" ]
         MENU_SELECTED_COLOR=${3:-46}
         MENU_ARROW_COLOR=${4:-91}
         echo "Menu color changed to '$MENU_OPTION_COLOR $MENU_SELECTED_COLOR $MENU_ARROW_COLOR'."
+        echo
         return
     fi
 
@@ -43,6 +44,7 @@ Syntax: tmenu [default] [option 1] [option 2]... [option n]
 
 Exp: tmenu 'tmenu' 'tmenu' 'so' 'cool'
 Will generate menu with 3 option and select 'tmenu' option as default.
+Press 'q' to quit tmenu.
 
 Variable:
 TMENU_RESULT: Get selected result.
