@@ -125,6 +125,7 @@ do
         break
   fi
 done
+echo
 printf "\033[?25h"
 }
 
