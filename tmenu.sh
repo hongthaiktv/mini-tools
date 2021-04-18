@@ -105,15 +105,15 @@ do
                   if [ "$MENU_ORDER" -gt "2" ]
                     then
                     (( --MENU_ORDER ))
+                    tmenu.select "${MENU_OPTION[@]}"
                   fi
-                  tmenu.select "${MENU_OPTION[@]}"
               ;;
               "$ARROW_DOWN")
                   if [ "$MENU_ORDER" -lt "${#MENU_OPTION[@]}" ]
                     then
                     (( ++MENU_ORDER ))
+                    tmenu.select "${MENU_OPTION[@]}"
                   fi
-                  tmenu.select "${MENU_OPTION[@]}"
               ;;
             esac
 	fi
