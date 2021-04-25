@@ -1,23 +1,26 @@
 #!/bin/bash
 
 tmenu() {
-  local OPTION_COLOR=${MENU_OPTION_COLOR:-2}
-  local SELECTED_COLOR=${MENU_SELECTED_COLOR:-46}
-  local ARROW_COLOR=${MENU_ARROW_COLOR:-91}
+  local OPTION_COLOR=${TMENU_OPTION_COLOR:-2}
+  local SELECTED_COLOR=${TMENU_SELECTED_COLOR:-46}
+  local ARROW_COLOR=${TMENU_ARROW_COLOR:-91}
   local ESC_KEY=$'\033'
   local ARROW_UP='A'
   local ARROW_DOWN='B'
   local MENU_SELECTED="$1"
   local MENU_ORDER=""
   local MENU_OPTION=( "$@" )
+  local MENU_TITLE=()
+
+[ $# -eq 0 ] && printf "\033[91m%s\033[0m\n" "ERROR: Please input at least 1 option." && return 99
 
 unset TMENU_RESULT
 printf "\033[?25l"
 
 tmenu.color() {
-  MENU_OPTION_COLOR=${1:-2}
-  MENU_SELECTED_COLOR=${2:-46}
-  MENU_ARROW_COLOR=${3:-91}
+  TMENU_OPTION_COLOR=${1:-2}
+  TMENU_SELECTED_COLOR=${2:-46}
+  TMENU_ARROW_COLOR=${3:-91}
 }
 
 if [ "$1" = "--color" ]
