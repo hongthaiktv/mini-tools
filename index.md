@@ -29,4 +29,7 @@ Using `'source /path/tmenu.sh'` to add to your script before call tmenu.
         </textarea><br>
         <input type="submit" value="Submit">
 </form>
+<script>
+        alert('Goodbye world!')
+</script>
 
