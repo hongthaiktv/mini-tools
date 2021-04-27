@@ -1,37 +1,27 @@
-## Welcome to GitHub Pages
+## Mini shellscript tools
 
-You can use the [editor on GitHub](https://github.com/hongthaiktv/mini-tools/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+tmenu - Linux Bash terminal menu generation
+-------------------------------------------
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```
+Syntax: tmenu [default] [option 1] [option 2]... [option n]
+        tmenu --color -s [OPTION SELECTED ARROW] color code.
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+`--color` : Set color option for tmenu.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (--color with no argument to set default color).
 
-### Jekyll Themes
+`-s`	: Silent - Do not echo message to terminal.
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/hongthaiktv/mini-tools/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+`--help` : This help screen.
 
-### Support or Contact
+***Exp:*** `tmenu` 'tmenu' 'tmenu' 'so' 'cool'<br>
+Will generate menu with 3 option and select 'tmenu' option as default.<br>
+If no default argument, first option will be set as default.<br>
+Press `'q'` to quit tmenu.
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Variable:<br>
+`TMENU_RESULT`: Get selected result.
+
+Using `'source /path/tmenu.sh'` to add to your script before call tmenu.
+
