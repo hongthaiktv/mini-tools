@@ -1,5 +1,3 @@
-# Mini shellscript tools
-
 tmenu - Linux Bash terminal menu generation
 -------------------------------------------
 
