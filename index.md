@@ -24,8 +24,9 @@ Variable:<br>
 Using `'source /path/tmenu.sh'` to add to your script before call tmenu.
 
 <form>
-        <input type="text" name="name">
+        <input type="text" name="name" value="Enter your name"><br>
         <textarea name="commend">
-        </textarea>
+        </textarea><br>
+        <input type="submit" value="Submit">
 </form>
 
