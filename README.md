@@ -3,7 +3,7 @@
 tmenu - Linux Bash terminal menu generation
 -------------------------------------------
 
-```
+```sh
 Syntax: tmenu [default] [option 1] [option 2]... [option n]
         tmenu --color -s [OPTION SELECTED ARROW] color code.
 ```
