@@ -4,7 +4,7 @@ tmenu - Linux Bash terminal menu generation
 -------------------------------------------
 
 <div align="center"><img align="center" src="https://user-images.githubusercontent.com/59330076/116459462-0b1ae100-a890-11eb-845f-bc9b638d6e72.png" alt="tmenu_screenshot_main" width="350"></div>
-
+<br>
 
 ```sh
 Syntax: tmenu [default] [option 1] [option 2]... [option n]
