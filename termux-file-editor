@@ -1,0 +1,32 @@
+#!/data/data/com.termux/files/usr/bin/bash
+
+source /data/data/com.termux/files/home/bin/tmenu.sh
+
+until [[ $TMENU_RESULT == "2. Exit" ]]; do
+	clear
+	echo "                 TERMUX FILE EDITOR                 "
+	echo
+	tmenu "1. HASH check" "2. Exit"
+	
+	if [ "$TMENU_RESULT" = "1. HASH check" ]; then
+		until [[ $TMENU_RESULT == "3. Back" ]]; do
+			clear
+			echo "HASH check"
+			echo "----------"
+			echo
+			tmenu "1. SHA256" "2. MD5" "3. Back"
+			if [ "$TMENU_RESULT" = "1. SHA256" ]; then
+				echo === SHA256 ===
+				sha256sum "$(cat $1)"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			elif [ "$TMENU_RESULT" = "2. MD5" ]; then
+				echo === MD5 ===
+				md5sum "$(cat $1)"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+		done
+	fi
+done
+
