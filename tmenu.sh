@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/data/data/com.termux/files/usr/bin/bash
 
 tmenu() {
   local OPTION_COLOR=${MENU_OPTION_COLOR:-2}
@@ -119,6 +119,7 @@ do
 	fi
     elif [ "$menu_key1" = "q" ] || [ "$menu_key1" = "Q" ]
       then
+        TMENU_RESULT="$ESC_KEY"
         break
     elif [ -z $menu_key1 ]
       then

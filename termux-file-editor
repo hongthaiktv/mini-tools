@@ -2,31 +2,85 @@
 
 source /data/data/com.termux/files/home/bin/tmenu.sh
 
-until [[ $TMENU_RESULT == "2. Exit" ]]; do
+ESC_KEY=$'\033'
+
+until [[ "$TMENU_RESULT" == "2. Exit" ]]; do
 	clear
 	echo "                 TERMUX FILE EDITOR                 "
 	echo
 	tmenu "1. HASH check" "2. Exit"
-	
-	if [ "$TMENU_RESULT" = "1. HASH check" ]; then
-		until [[ $TMENU_RESULT == "3. Back" ]]; do
-			clear
-			echo "HASH check"
-			echo "----------"
-			echo
-			tmenu "1. SHA256" "2. MD5" "3. Back"
-			if [ "$TMENU_RESULT" = "1. SHA256" ]; then
-				echo === SHA256 ===
-				sha256sum "$(cat $1)"
+
+	case "$TMENU_RESULT" in
+		"1. HASH check")
+			until [[ "$TMENU_RESULT" == "6. Back" ]]; do
+				clear
+				echo "HASH check"
+				echo "----------"
 				echo
-				read -rsn1 -p "Press any key to continue..." key
-			elif [ "$TMENU_RESULT" = "2. MD5" ]; then
-				echo === MD5 ===
-				md5sum "$(cat $1)"
-				echo
-				read -rsn1 -p "Press any key to continue..." key
-			fi
-		done
-	fi
+				tmenu "1. SHA1" "2. SHA256" "3. SHA384" "4. SHA512" "5. MD5" "6. Back"
+
+				case "$TMENU_RESULT" in
+					"1. SHA1")
+						echo === SHA1 ===
+						sha1sum "$(cat $1)"
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						if [[ "$key" == "$ESC_KEY" ]]; then
+							exit
+						fi
+						;;
+
+					"2. SHA256")
+						echo === SHA256 ===
+						sha256sum "$(cat $1)"
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						if [[ "$key" == "$ESC_KEY" ]]; then
+							exit
+						fi
+						;;
+					
+					"3. SHA384")
+						echo === SHA384 ===
+						sha384sum "$(cat $1)"
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						if [[ "$key" == "$ESC_KEY" ]]; then
+							exit
+						fi
+						;;
+					
+					"4. SHA512")
+						echo === SHA512 ===
+						sha512sum "$(cat $1)"
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						if [[ "$key" == "$ESC_KEY" ]]; then
+							exit
+						fi
+						;;
+					
+					"5. MD5")
+						echo === MD5 ===
+						md5sum "$(cat $1)"
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						if [[ "$key" == "$ESC_KEY" ]]; then
+							exit
+						fi
+						;;
+
+					"$ESC_KEY") break ;;
+				esac
+			done
+			;;
+
+		"$ESC_KEY") exit ;;
+	esac
 done
 
