@@ -94,39 +94,47 @@ fi
 while :
 do
   read -rsn1 menu_key1
-  if [ "$menu_key1" = "$ESC_KEY" ]
-    then
+  case "$menu_key1" in
+    "$ESC_KEY")
       read -rsn1 menu_key2
-        if [ "$menu_key2" = "[" ]
-          then
-            read -rsn1 menu_key3
-            case "$menu_key3" in
-              "$ARROW_UP")
-                  if [ "$MENU_ORDER" -gt "2" ]
-                    then
-                    (( --MENU_ORDER ))
-                    tmenu.select "${MENU_OPTION[@]}"
-                  fi
-              ;;
-              "$ARROW_DOWN")
-                  if [ "$MENU_ORDER" -lt "${#MENU_OPTION[@]}" ]
-                    then
-                    (( ++MENU_ORDER ))
-                    tmenu.select "${MENU_OPTION[@]}"
-                  fi
-              ;;
-            esac
-	fi
-    elif [ "$menu_key1" = "q" ] || [ "$menu_key1" = "Q" ]
-      then
-        TMENU_RESULT="$ESC_KEY"
-        break
-    elif [ -z $menu_key1 ]
-      then
-        # export TMENU_RESULT if compile to binary
-        TMENU_RESULT=$MENU_SELECTED
-        break
-  fi
+      if [ "$menu_key2" = "[" ]
+        then
+          read -rsn1 menu_key3
+          case "$menu_key3" in
+            "$ARROW_UP")
+                if [ "$MENU_ORDER" -gt "2" ]
+                  then
+                  (( --MENU_ORDER ))
+                  tmenu.select "${MENU_OPTION[@]}"
+                fi
+            ;;
+            "$ARROW_DOWN")
+                if [ "$MENU_ORDER" -lt "${#MENU_OPTION[@]}" ]
+                  then
+                  (( ++MENU_ORDER ))
+                  tmenu.select "${MENU_OPTION[@]}"
+                fi
+            ;;
+          esac
+      fi
+    ;;  
+
+    "q" | "Q")
+      TMENU_RESULT="$ESC_KEY"
+      break
+    ;;
+
+    "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9")
+      TMENU_RESULT="$menu_key1"
+      break
+    ;;
+	
+    "")
+      # export TMENU_RESULT if compile to binary
+      TMENU_RESULT=$MENU_SELECTED
+      break
+    ;;
+  esac
 done
 echo
 printf "\033[?25h"

@@ -2,17 +2,18 @@
 
 source /data/data/com.termux/files/home/bin/tmenu.sh
 
+WDIR="$(pwd)"
 ESC_KEY=$'\033'
 
-until [[ "$TMENU_RESULT" == "2. Exit" ]]; do
+while :; do
 	clear
 	echo "                 TERMUX FILE EDITOR                 "
 	echo
-	tmenu "1. HASH check" "2. Exit"
+	tmenu "1. HASH check" "2. Backup document" "3. Exit"
 
 	case "$TMENU_RESULT" in
-		"1. HASH check")
-			until [[ "$TMENU_RESULT" == "6. Back" ]]; do
+		"1" | "1. HASH check")
+			while :; do
 				clear
 				echo "HASH check"
 				echo "----------"
@@ -20,67 +21,88 @@ until [[ "$TMENU_RESULT" == "2. Exit" ]]; do
 				tmenu "1. SHA1" "2. SHA256" "3. SHA384" "4. SHA512" "5. MD5" "6. Back"
 
 				case "$TMENU_RESULT" in
-					"1. SHA1")
+					"1" | "1. SHA1")
 						echo === SHA1 ===
 						sha1sum "$(cat $1)"
 						echo
-						read -rsn1 -p "Press any key to continue..." key
+						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 
-					"2. SHA256")
+					"2" | "2. SHA256")
 						echo === SHA256 ===
 						sha256sum "$(cat $1)"
 						echo
-						read -rsn1 -p "Press any key to continue..." key
+						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 					
-					"3. SHA384")
+					"3" | "3. SHA384")
 						echo === SHA384 ===
 						sha384sum "$(cat $1)"
 						echo
-						read -rsn1 -p "Press any key to continue..." key
+						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 					
-					"4. SHA512")
+					"4" | "4. SHA512")
 						echo === SHA512 ===
 						sha512sum "$(cat $1)"
 						echo
-						read -rsn1 -p "Press any key to continue..." key
+						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 					
-					"5. MD5")
+					"5" | "5. MD5")
 						echo === MD5 ===
 						md5sum "$(cat $1)"
 						echo
-						read -rsn1 -p "Press any key to continue..." key
+						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 
-					"$ESC_KEY") break ;;
+					"6" | "6. Back" | "$ESC_KEY")
+						unset TMENU_RESULT
+						break
+						;;
+
+					*) read -rsn1 -p "Wrong option selected...!" key ;;
 				esac
 			done
 			;;
 
-		"$ESC_KEY") exit ;;
+		"2" | "2. Backup document")
+			cd ~/docs
+			git add .
+			git commit -m "update"
+			git push
+			cd $WDIR
+			echo
+			read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+			echo
+			if [[ "$key" == "$ESC_KEY" ]]; then
+				exit
+			fi
+			;;
+
+		"3" | "3. Exit" | "$ESC_KEY") exit ;;
+
+		*) read -rsn1 -p "Wrong option selected...!" key ;;
 	esac
 done
 
