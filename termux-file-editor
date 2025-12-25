@@ -5,11 +5,22 @@ source /data/data/com.termux/files/home/bin/tmenu.sh
 WDIR="$(pwd)"
 ESC_KEY=$'\033'
 
+if [[ ! -z "$1" ]]; then
+	while IFS= read -r line; do
+		if [[ -z "$DST" ]]; then
+			DST="$line"
+		else SRC="$line"
+		fi
+	done < "$1"
+	unset IFS
+	echo "$(date +"%x %X") :: $SRC" >> ~/.tfe_history
+fi
+
 while :; do
 	clear
 	echo "                 TERMUX FILE EDITOR                 "
 	echo
-	tmenu "1. HASH check" "2. Backup document" "3. Exit"
+	tmenu "1. HASH check" "2. Backup document" "3. History" "4. Exit"
 
 	case "$TMENU_RESULT" in
 		"1" | "1. HASH check")
@@ -23,7 +34,7 @@ while :; do
 				case "$TMENU_RESULT" in
 					"1" | "1. SHA1")
 						echo === SHA1 ===
-						sha1sum "$(cat $1)"
+						sha1sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -34,7 +45,7 @@ while :; do
 
 					"2" | "2. SHA256")
 						echo === SHA256 ===
-						sha256sum "$(cat $1)"
+						sha256sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -45,7 +56,7 @@ while :; do
 					
 					"3" | "3. SHA384")
 						echo === SHA384 ===
-						sha384sum "$(cat $1)"
+						sha384sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -56,7 +67,7 @@ while :; do
 					
 					"4" | "4. SHA512")
 						echo === SHA512 ===
-						sha512sum "$(cat $1)"
+						sha512sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -67,7 +78,7 @@ while :; do
 					
 					"5" | "5. MD5")
 						echo === MD5 ===
-						md5sum "$(cat $1)"
+						md5sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -100,7 +111,15 @@ while :; do
 			fi
 			;;
 
-		"3" | "3. Exit" | "$ESC_KEY") exit ;;
+
+		"3" | "3. History")
+			cat ~/.tfe_history
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			echo
+			;;
+
+		"4" | "4. Exit" | "$ESC_KEY") exit ;;
 
 		*) read -rsn1 -p "Wrong option selected...!" key ;;
 	esac

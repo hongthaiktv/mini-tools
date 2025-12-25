@@ -27,3 +27,7 @@ Variable:<br>
 `TMENU_RESULT`: Get selected result.
 
 Using `'source /path/tmenu.sh'` to add to your script before call tmenu.
+
+______
+
+**BUG:** Long text line option (2 line) will render error.
