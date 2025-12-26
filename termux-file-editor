@@ -16,14 +16,93 @@ if [[ ! -z "$1" ]]; then
 	echo "$(date +"%x %X") :: $SRC" >> ~/.tfe_history
 fi
 
+action.dir() {
+	echo "Directory Action"
+	echo "----------------"
+	echo
+	tmenu "1. Copy" "2. Delete" "3. Git" "4. Zip"
+}
+
+action.file() {
+	echo "File Action"
+	echo "-----------"
+	echo
+	tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Vim"
+	case "$TMENU_RESULT" in
+		"1. Copy to TCMD")
+			if [[ -z "$DST" ]]; then
+				read -rp "Destination: " DST
+			fi
+			cp "$1" "$DST"
+			;;
+
+		"2. Copy")
+			local cpDst
+			read -rp "Destination: " cpDst
+			cp "$1" "$cpDst"
+			;;
+
+		"3. Delete")
+			read -rsn1 -p "Delete \"$1\"? (y/N): " key
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				rm "$1"
+			fi
+			;;
+
+		"4. Vim")
+			vim "$1"
+			;;
+	esac
+}
+
 while :; do
 	clear
 	echo "                 TERMUX FILE EDITOR                 "
 	echo
-	tmenu "1. HASH check" "2. Backup document" "3. History" "4. Exit"
+	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. History" "5. Exit"
 
 	case "$TMENU_RESULT" in
-		"1" | "1. HASH check")
+		"1. File explorer")
+			while :; do
+				unset file_list
+				counter=1
+				file_list[0]="."
+				file_list[1]=".."
+				for file in *; do
+					(( ++counter ))
+					file_list[$counter]="$file"
+				done
+				clear
+				echo "File explorer"
+				echo "-------------"
+				echo
+				echo "$(pwd)"
+				echo "(0: Action | 1: Directory)"
+				echo
+				tmenu "${file_list[2]}" "${file_list[@]}"
+				if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+					break
+				elif [[ "$TMENU_RESULT" == 0 ]]; then
+					if [[ -d "$MENU_SELECTED" ]]; then
+						action.dir
+					elif [[ -f "$MENU_SELECTED" ]]; then
+						action.file
+					fi
+				elif [[ "$TMENU_RESULT" == "." ]]; then
+					action.dir
+				elif [[ -d "$TMENU_RESULT" ]]; then
+					cd "$TMENU_RESULT" 
+				elif [[ -f "$TMENU_RESULT" ]]; then
+					action.file "$TMENU_RESULT"
+				fi
+			done
+			;;
+
+		"2. HASH check")
+			if [[ -z "$SRC" ]]; then
+				read -rp "File path: " SRC
+			fi
+
 			while :; do
 				clear
 				echo "HASH check"
@@ -32,62 +111,67 @@ while :; do
 				tmenu "1. SHA1" "2. SHA256" "3. SHA384" "4. SHA512" "5. MD5" "6. Back"
 
 				case "$TMENU_RESULT" in
-					"1" | "1. SHA1")
+					"1. SHA1")
 						echo === SHA1 ===
 						sha1sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
+						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 
-					"2" | "2. SHA256")
+					"2. SHA256")
 						echo === SHA256 ===
 						sha256sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
+						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 					
-					"3" | "3. SHA384")
+					"3. SHA384")
 						echo === SHA384 ===
 						sha384sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
+						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 					
-					"4" | "4. SHA512")
+					"4. SHA512")
 						echo === SHA512 ===
 						sha512sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
+						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 					
-					"5" | "5. MD5")
+					"5. MD5")
 						echo === MD5 ===
 						md5sum "$SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+						echo
 						echo
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
 						;;
 
-					"6" | "6. Back" | "$ESC_KEY")
+					"6. Back" | "$ESC_KEY")
 						unset TMENU_RESULT
 						break
 						;;
@@ -97,7 +181,7 @@ while :; do
 			done
 			;;
 
-		"2" | "2. Backup document")
+		"3. Backup document")
 			cd ~/docs
 			git add .
 			git commit -m "update"
@@ -106,20 +190,21 @@ while :; do
 			echo
 			read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 			echo
+			echo
 			if [[ "$key" == "$ESC_KEY" ]]; then
 				exit
 			fi
 			;;
 
-
-		"3" | "3. History")
+		"4. History")
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			echo
+			echo
 			;;
 
-		"4" | "4. Exit" | "$ESC_KEY") exit ;;
+		"5. Exit" | "$ESC_KEY") exit ;;
 
 		*) read -rsn1 -p "Wrong option selected...!" key ;;
 	esac

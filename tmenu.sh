@@ -7,9 +7,9 @@ tmenu() {
   local ESC_KEY=$'\033'
   local ARROW_UP='A'
   local ARROW_DOWN='B'
-  local MENU_SELECTED="$1"
   local MENU_ORDER=""
   local MENU_OPTION=( "$@" )
+  MENU_SELECTED="$1"
 
 unset TMENU_RESULT
 printf "\033[?25l"
@@ -125,13 +125,18 @@ do
     ;;
 
     "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9")
-      TMENU_RESULT="$menu_key1"
+      if [ "$menu_key1" -lt "${#MENU_OPTION[@]}" ] && [ "$menu_key1" -gt 0 ]; then
+        MENU_ORDER=$(( menu_key1 + 1 ))
+        tmenu.select "${MENU_OPTION[@]}"
+        TMENU_RESULT="$MENU_SELECTED"
+      else TMENU_RESULT="$menu_key1"
+      fi
       break
     ;;
 	
     "")
       # export TMENU_RESULT if compile to binary
-      TMENU_RESULT=$MENU_SELECTED
+      TMENU_RESULT="$MENU_SELECTED"
       break
     ;;
   esac
