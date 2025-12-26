@@ -20,44 +20,166 @@ action.dir() {
 	echo "Directory Action"
 	echo "----------------"
 	echo
-	tmenu "1. Copy" "2. Delete" "3. Git" "4. Zip"
+	tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Git" "5. Zip" "6. Zip to TCMD" "7. Detail"
+	case "$TMENU_RESULT" in
+		"1. Copy to TCMD")
+			if [[ -z "$DST" ]]; then
+				read -rep "Destination: " DST
+				echo
+				eval DST="$DST"
+			fi
+			cp -r "$1" "$DST"
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"2. Copy")
+			local cpDst
+			read -rep "Destination: " cpDst
+			echo
+			eval cpDst="$cpDst"
+			cp -r "$1" "$cpDst"
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"3. Delete")
+			read -rn1 -p "Delete \"$1\"? (y/N): " key
+			echo
+			echo
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				rm -rf "$1"
+			fi
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			else unset preItem
+			fi
+			;;
+
+		"4. Git")
+			local cMsg
+			cd "$1"
+			read -rep "Message: " cMsg
+			echo
+			git add .
+			git commit -m "$cMsg"
+			git push
+			cd "$WDIR"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"5. Zip")
+			local zDst
+			read -rep "Archive name: " zDst
+			eval zDst="$zDst"
+			7zz a -snl "$zDst" "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"6. Zip to TCMD")
+			local zDst
+			if [[ -z "$DST" ]]; then
+				read -rep "Directory Path: " DST
+			fi
+			read -rep "Archive name: " zDst
+			eval zDst="$DST$zDst"
+			7zz a -snl "$zDst" "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"7. Detail")
+			echo "Directory Detail"
+			echo "----------------"
+			echo
+			echo "Size: $(du -sh "$1")"
+			echo
+			ls -lh "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+	esac
 }
 
 action.file() {
 	echo "File Action"
 	echo "-----------"
 	echo
-	tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Vim"
+
+	if [[ "$1" == *.zip || "$1" == *.7z || "$1" == *.gz || "$1" == *.xz || "$1" == *.tar || "$1" == *.rar ]]; then
+		tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Edit" "5. Extract"
+	else tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Edit"
+	fi
+
 	case "$TMENU_RESULT" in
 		"1. Copy to TCMD")
 			if [[ -z "$DST" ]]; then
-				read -rp "Destination: " DST
+				read -rep "Destination: " DST
+				echo
+				eval DST="$DST"
 			fi
 			cp "$1" "$DST"
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
 			;;
 
 		"2. Copy")
 			local cpDst
-			read -rp "Destination: " cpDst
+			read -rep "Destination: " cpDst
+			echo
+			eval cpDst="$cpDst"
 			cp "$1" "$cpDst"
-			;;
-
-		"3. Delete")
-			read -rsn1 -p "Delete \"$1\"? (y/N): " key
-			if [[ "$key" == "y" || "$key" == "Y" ]]; then
-				rm "$1"
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
-		"4. Vim")
+		"3. Delete")
+			read -rn1 -p "Delete \"$1\"? (y/N): " key
+			echo
+			echo
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				rm -f "$1"
+			fi
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			else unset preItem
+			fi
+			;;
+
+		"4. Edit")
 			vim "$1"
+			;;
+
+		"5. Extract")
+			local zDst
+			read -rep "Destination: " zDst
+			eval zDst="$zDst"
+			7zz x -o"$zDst" "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 			;;
 	esac
 }
 
 while :; do
 	clear
-	echo "                 TERMUX FILE EDITOR                 "
+	echo "           ##############################           "
+	echo "           #                            #           "
+	echo "           #     TERMUX FILE EDITOR     #           "
+	echo "           #                            #           "
+	echo "           ##############################           "
 	echo
 	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. History" "5. Exit"
 
@@ -79,19 +201,25 @@ while :; do
 				echo "$(pwd)"
 				echo "(0: Action | 1: Directory)"
 				echo
-				tmenu "${file_list[2]}" "${file_list[@]}"
+				if [[ -z "$preItem" ]]; then
+					preItem=${file_list[2]}
+				fi
+				tmenu "$preItem" "${file_list[@]}"
 				if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 					break
 				elif [[ "$TMENU_RESULT" == 0 ]]; then
+					preItem="$MENU_SELECTED"
 					if [[ -d "$MENU_SELECTED" ]]; then
-						action.dir
+						action.dir "$MENU_SELECTED"
 					elif [[ -f "$MENU_SELECTED" ]]; then
-						action.file
+						action.file "$MENU_SELECTED"
 					fi
 				elif [[ "$TMENU_RESULT" == "." ]]; then
-					action.dir
+					action.dir "$TMENU_RESULT"
 				elif [[ -d "$TMENU_RESULT" ]]; then
 					cd "$TMENU_RESULT" 
+					WDIR="$(pwd)"
+					unset preItem
 				elif [[ -f "$TMENU_RESULT" ]]; then
 					action.file "$TMENU_RESULT"
 				fi
@@ -100,7 +228,8 @@ while :; do
 
 		"2. HASH check")
 			if [[ -z "$SRC" ]]; then
-				read -rp "File path: " SRC
+				read -rep "File path: " SRC
+				eval SRC="$SRC"
 			fi
 
 			while :; do
@@ -200,8 +329,6 @@ while :; do
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-			echo
-			echo
 			;;
 
 		"5. Exit" | "$ESC_KEY") exit ;;
