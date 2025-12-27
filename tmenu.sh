@@ -7,9 +7,13 @@ tmenu() {
   local ESC_KEY=$'\033'
   local ARROW_UP='A'
   local ARROW_DOWN='B'
-  local MENU_ORDER=""
   local MENU_OPTION=( "$@" )
+  MENU_ORDER=""
   MENU_SELECTED="$1"
+
+  if [ ${#MENU_SELECTED} -gt 44 ]; then
+	  MENU_SELECTED="${MENU_SELECTED:0:44}..."
+  fi
 
 unset TMENU_RESULT
 printf "\033[?25l"
@@ -62,6 +66,9 @@ tmenu.show() {
 for (( i=2; i<=$#; i++ ))
 do
   local line_opt=${@:$i:1}
+  if [ ${#line_opt} -gt 44 ]; then
+	  line_opt="${line_opt:0:44}..."
+  fi
   if [ "$MENU_SELECTED" = "$line_opt" ]
     then
       printf "\033[%sm>>\033[0m \033[%sm%s\033[0m\n" "$ARROW_COLOR" "$SELECTED_COLOR" "$line_opt"
@@ -78,6 +85,9 @@ done
 tmenu.select() {
   printf "\033[$(( $# - 1 ))A\033[0J"
   MENU_SELECTED=${@:$MENU_ORDER:1}
+  if [ ${#MENU_SELECTED} -gt 44 ]; then
+	  MENU_SELECTED="${MENU_SELECTED:0:44}..."
+  fi
   tmenu.show "$@"
 }
 

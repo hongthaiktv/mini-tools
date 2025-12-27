@@ -2,6 +2,10 @@
 
 source /data/data/com.termux/files/home/bin/tmenu.sh
 
+#a="01234 abc"
+#echo ${#a}
+#read -rsn1 -p Press key
+
 WDIR="$(pwd)"
 ESC_KEY=$'\033'
 
@@ -173,6 +177,10 @@ action.file() {
 	esac
 }
 
+tmenu.wSelected() {
+	read -rsn1 -p "Wrong option selected...!" key
+}
+
 while :; do
 	clear
 	echo "           ##############################           "
@@ -181,7 +189,8 @@ while :; do
 	echo "           #                            #           "
 	echo "           ##############################           "
 	echo
-	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. History" "5. Exit"
+
+	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer")
@@ -201,10 +210,21 @@ while :; do
 				echo "$(pwd)"
 				echo "(0: Action | 1: Directory)"
 				echo
+
 				if [[ -z "$preItem" ]]; then
 					preItem=${file_list[2]}
 				fi
+
 				tmenu "$preItem" "${file_list[@]}"
+
+				if [[ ${#TMENU_RESULT} == 47 && "${TMENU_RESULT: -3}" == "..." ]]; then
+					TMENU_RESULT="${file_list[(( MENU_ORDER - 2 ))]}"
+				fi
+
+				if [[ ${#MENU_SELECTED} == 47 && "${MENU_SELECTED: -3}" == "..." ]]; then
+					MENU_SELECTED="${file_list[(( MENU_ORDER - 2 ))]}"
+				fi
+
 				if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 					break
 				elif [[ "$TMENU_RESULT" == 0 ]]; then
@@ -325,13 +345,15 @@ while :; do
 			fi
 			;;
 
-		"4. History")
+		"4. Vim") vim ;;
+
+		"5. History")
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"5. Exit" | "$ESC_KEY") exit ;;
+		"6. Exit" | "$ESC_KEY") exit ;;
 
 		*) read -rsn1 -p "Wrong option selected...!" key ;;
 	esac
