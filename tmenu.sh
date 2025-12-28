@@ -7,7 +7,7 @@ tmenu() {
   local ESC_KEY=$'\033'
   local ARROW_UP='A'
   local ARROW_DOWN='B'
-  local MENU_OPTION=( "$@" )
+  MENU_OPTION=( "$@" )
   MENU_ORDER=""
   MENU_SELECTED="$1"
 
@@ -62,7 +62,6 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 fi
 
 tmenu.show() {
-
 for (( i=2; i<=$#; i++ ))
 do
   local line_opt=${@:$i:1}
@@ -76,6 +75,7 @@ do
         then
           MENU_ORDER="$i"
       fi
+      MENU_SELECTED="${@:$MENU_ORDER:1}"
     else
       printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$line_opt"
   fi
@@ -84,7 +84,7 @@ done
 
 tmenu.select() {
   printf "\033[$(( $# - 1 ))A\033[0J"
-  MENU_SELECTED=${@:$MENU_ORDER:1}
+  MENU_SELECTED="${@:$MENU_ORDER:1}"
   if [ ${#MENU_SELECTED} -gt 44 ]; then
 	  MENU_SELECTED="${MENU_SELECTED:0:44}..."
   fi
