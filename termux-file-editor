@@ -173,8 +173,22 @@ action.file() {
 	esac
 }
 
-tmenu.wSelected() {
-	read -rsn1 -p "Wrong option selected...!" key
+tmenu.create() {
+	if [[ -z "$search_result" ]]; then
+		tmenu "$@"
+	else 
+		tmenu "$search_result" "$@"
+		unset search_result
+	fi
+}
+
+tmenu.createDefault() {
+	if [[ -z "$search_result" ]]; then
+		tmenu "$@"
+	else 
+		tmenu "$search_result" "${@:2}"
+		unset search_result
+	fi
 }
 
 while :; do
@@ -186,7 +200,7 @@ while :; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
+	tmenu.create "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer")
@@ -211,11 +225,12 @@ while :; do
 				fi
 
 				tmenu "$preItem" "${file_list[@]}"
+				
+				preItem="$MENU_SELECTED"
 
 				if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 					break
 				elif [[ "$TMENU_RESULT" == 0 ]]; then
-					preItem="$MENU_SELECTED"
 					if [[ -d "$MENU_SELECTED" ]]; then
 						action.dir "$MENU_SELECTED"
 					elif [[ -f "$MENU_SELECTED" ]]; then
@@ -312,7 +327,10 @@ while :; do
 						break
 						;;
 
-					*) read -rsn1 -p "Wrong option selected...!" key ;;
+					"0" | "$ESC_KEY")
+						unset TMENU_RESULT
+						break
+						;;
 				esac
 			done
 			;;
@@ -342,7 +360,22 @@ while :; do
 
 		"6. Exit" | "$ESC_KEY") exit ;;
 
-		*) read -rsn1 -p "Wrong option selected...!" key ;;
+		"0" | "$ESC_KEY") exit ;;
+
+		"$ESC_KEY""s")
+			unset search_result
+			read -rep "Search: " search
+			echo
+			for item in "${MENU_OPTION[@]}"; do
+				if [[ "$item" == *"$search"* ]]; then
+					search_result=$item
+					break
+				fi
+			done
+			if [[ -z "$search_result" ]]; then
+				read -rsn1 -p "Item not found!" key
+			fi
+			;;
 	esac
 done
 
