@@ -361,21 +361,6 @@ while :; do
 		"6. Exit" | "$ESC_KEY") exit ;;
 
 		"0" | "$ESC_KEY") exit ;;
-
-		"$ESC_KEY""s")
-			unset search_result
-			read -rep "Search: " search
-			echo
-			for item in "${MENU_OPTION[@]}"; do
-				if [[ "$item" == *"$search"* ]]; then
-					search_result=$item
-					break
-				fi
-			done
-			if [[ -z "$search_result" ]]; then
-				read -rsn1 -p "Item not found!" key
-			fi
-			;;
 	esac
 done
 
