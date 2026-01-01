@@ -7,8 +7,8 @@ tmenu() {
   local ESC_KEY=$'\033'
   local ARROW_UP='A'
   local ARROW_DOWN='B'
+  unset MENU_ORDER
   MENU_OPTION=( "$@" )
-  MENU_ORDER=""
   MENU_SELECTED="$1"
 
   if [ ${#MENU_SELECTED} -gt 44 ]; then
@@ -63,26 +63,60 @@ fi
 
 tmenu.search() {
   declare -l local search
+  local pattern
   local line_opt
   local search_result
-  echo
-  read -rep "Search: " search
-  echo
-  for (( i=1 ; i<${#MENU_OPTION[@]} ; i++ )); do
+
+  if [[ -z $1 ]]; then
+    echo
+    read -rep "Search: " search
+    echo
+	pattern=*"$search"*
+  else
+    search="$1"
+	pattern="$search"*
+  fi
+  
+  for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_OPTION[@]} ; i++ )); do
     line_opt="${MENU_OPTION[$i]}"
-    if [[ "${line_opt,,}" == *"$search"* ]]; then
-      search_result="${MENU_OPTION[$i]}"
+
+    if [[ "${line_opt,,}" == $pattern ]]; then
+      search_result="$line_opt"
       MENU_ORDER=$i
-      printf "\033[3A\033[0J"
+      if [[ -z $1 ]]; then
+        printf "\033[3A\033[0J"
+      fi
       tmenu.select "${MENU_OPTION[@]}"
       break
     fi
   done
 
   if [[ -z "$search_result" ]]; then
-    read -rsn1 -p "Item not found!" key
-	echo
-    printf "\033[4A\033[0J"
+    for (( i=1 ; i<=$MENU_ORDER ; i++ )); do
+      line_opt="${MENU_OPTION[$i]}"
+
+      if [[ "${line_opt,,}" == $pattern ]]; then
+        search_result="$line_opt"
+        MENU_ORDER=$i
+        if [[ -z $1 ]]; then
+          printf "\033[3A\033[0J"
+        fi
+        tmenu.select "${MENU_OPTION[@]}"
+        break
+      fi
+    done
+    if [[ -z "$search_result" ]]; then
+      if [[ -z $1 ]]; then
+        read -rsn1 -p "Item not found!" key
+	    echo
+        printf "\033[4A\033[0J"
+      else
+        echo
+        read -rsn1 -p "Item not found!" key
+	    echo
+        printf "\033[2A\033[0J"
+      fi
+    fi
   fi
 }
 
@@ -138,9 +172,7 @@ do
           break
         ;;
 
-        "s"|"S")
-          tmenu.search
-        ;;
+        "s"|"S") tmenu.search ;;
 
         [a-zA-Z])
           TMENU_RESULT="$ESC_KEY$menu_key2"
@@ -182,11 +214,8 @@ do
       fi
     ;;
 
-    [A-Z])
-      TMENU_RESULT="$menu_key1"
-      break
-    ;;
-	
+    [a-z]) tmenu.search "$menu_key1" ;;
+
     "")
       # export TMENU_RESULT if compile to binary
       TMENU_RESULT="$MENU_SELECTED"
