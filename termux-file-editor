@@ -57,7 +57,7 @@ action.dir() {
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
-			else unset preItem
+			else unset prevItem
 			fi
 			;;
 
@@ -154,7 +154,7 @@ action.file() {
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
-			else unset preItem
+			else unset prevItem
 			fi
 			;;
 
@@ -191,6 +191,60 @@ tmenu.createDefault() {
 	fi
 }
 
+tmenu.fileExplorer() {
+	while :; do
+		local file_list=( "." ".." )
+		local counter=1
+		local checkPrev=0
+
+		for file in *; do
+			(( ++counter ))
+			file_list[$counter]="$file"
+			if [[ "$prevItem" == "$file" ]]; then
+				checkPrev=1
+			fi
+		done
+
+		clear
+		echo "File explorer"
+		echo "-------------"
+		echo
+		echo "$(pwd)"
+		echo "(0: Action | 1: Directory)"
+		echo
+
+		if [[ ! -z "$prevItem" && $checkPrev == 0 ]]; then
+			unset prevItem
+		fi
+		
+		if [[ -z "$prevItem" ]]; then
+			local prevItem=${file_list[2]}
+		fi
+
+		tmenu "$prevItem" "${file_list[@]}"
+		
+		prevItem="$MENU_SELECTED"
+
+		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+			break
+		elif [[ "$TMENU_RESULT" == 0 ]]; then
+			if [[ -d "$MENU_SELECTED" ]]; then
+				action.dir "$MENU_SELECTED"
+			elif [[ -f "$MENU_SELECTED" ]]; then
+				action.file "$MENU_SELECTED"
+			fi
+		elif [[ "$TMENU_RESULT" == "." ]]; then
+			action.dir "$TMENU_RESULT"
+		elif [[ -d "$TMENU_RESULT" ]]; then
+			cd "$TMENU_RESULT" 
+			WDIR="$(pwd)"
+			unset prevItem
+		elif [[ -f "$TMENU_RESULT" ]]; then
+			action.file "$TMENU_RESULT"
+		fi
+	done
+}
+
 while :; do
 	clear
 	echo "           ##############################           "
@@ -203,50 +257,7 @@ while :; do
 	tmenu.create "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
 
 	case "$TMENU_RESULT" in
-		"1. File explorer")
-			while :; do
-				unset file_list
-				counter=1
-				file_list=( "." ".." )
-				for file in *; do
-					(( ++counter ))
-					file_list[$counter]="$file"
-				done
-				clear
-				echo "File explorer"
-				echo "-------------"
-				echo
-				echo "$(pwd)"
-				echo "(0: Action | 1: Directory)"
-				echo
-
-				if [[ -z "$preItem" ]]; then
-					preItem=${file_list[2]}
-				fi
-
-				tmenu "$preItem" "${file_list[@]}"
-				
-				preItem="$MENU_SELECTED"
-
-				if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
-					break
-				elif [[ "$TMENU_RESULT" == 0 ]]; then
-					if [[ -d "$MENU_SELECTED" ]]; then
-						action.dir "$MENU_SELECTED"
-					elif [[ -f "$MENU_SELECTED" ]]; then
-						action.file "$MENU_SELECTED"
-					fi
-				elif [[ "$TMENU_RESULT" == "." ]]; then
-					action.dir "$TMENU_RESULT"
-				elif [[ -d "$TMENU_RESULT" ]]; then
-					cd "$TMENU_RESULT" 
-					WDIR="$(pwd)"
-					unset preItem
-				elif [[ -f "$TMENU_RESULT" ]]; then
-					action.file "$TMENU_RESULT"
-				fi
-			done
-			;;
+		"1. File explorer") tmenu.fileExplorer ;;
 
 		"2. HASH check")
 			if [[ -z "$SRC" ]]; then
@@ -358,9 +369,7 @@ while :; do
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"6. Exit" | "$ESC_KEY") exit ;;
-
-		"0" | "$ESC_KEY") exit ;;
+		"6. Exit" | "0" | "$ESC_KEY") exit ;;
 	esac
 done
 

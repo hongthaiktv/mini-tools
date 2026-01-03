@@ -77,45 +77,62 @@ tmenu.search() {
 	pattern="$search"*
   fi
   
-  for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_OPTION[@]} ; i++ )); do
-    line_opt="${MENU_OPTION[$i]}"
-
-    if [[ "${line_opt,,}" == $pattern ]]; then
-      search_result="$line_opt"
-      MENU_ORDER=$i
-      if [[ -z $1 ]]; then
-        printf "\033[3A\033[0J"
-      fi
-      tmenu.select "${MENU_OPTION[@]}"
-      break
-    fi
-  done
-
-  if [[ -z "$search_result" ]]; then
-    for (( i=1 ; i<=$MENU_ORDER ; i++ )); do
+  if [[ "$menu_key1" == [a-z] || "$menu_key2" == "s" && -z "$1" ]]; then
+    for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_OPTION[@]} ; i++ )); do
       line_opt="${MENU_OPTION[$i]}"
 
       if [[ "${line_opt,,}" == $pattern ]]; then
-        search_result="$line_opt"
+        search_result="${MENU_OPTION[$i]}"
         MENU_ORDER=$i
-        if [[ -z $1 ]]; then
-          printf "\033[3A\033[0J"
-        fi
-        tmenu.select "${MENU_OPTION[@]}"
         break
       fi
     done
+
     if [[ -z "$search_result" ]]; then
-      if [[ -z $1 ]]; then
-        read -rsn1 -p "Item not found!" key
-	    echo
-        printf "\033[4A\033[0J"
-      else
-        echo
-        read -rsn1 -p "Item not found!" key
-	    echo
-        printf "\033[2A\033[0J"
+      for (( i=1 ; i<=$MENU_ORDER ; i++ )); do
+        line_opt="${MENU_OPTION[$i]}"
+
+        if [[ "${line_opt,,}" == $pattern ]]; then
+          search_result="${MENU_OPTION[$i]}"
+          MENU_ORDER=$i
+          break
+        fi
+      done
+    fi
+  elif [[ "$menu_key1" == [A-Z] || "$menu_key2" == "S" && -z "$1" ]]; then
+    for (( i=$(( $MENU_ORDER - 1 )) ; i>0 ; i-- )); do
+      line_opt="${MENU_OPTION[$i]}"
+
+      if [[ "${line_opt,,}" == $pattern ]]; then
+        search_result="${MENU_OPTION[$i]}"
+        MENU_ORDER=$i
+        break
       fi
+    done
+
+    if [[ -z "$search_result" ]]; then
+		for (( i=$(( ${#MENU_OPTION[@]} - 1 )) ; i>=$MENU_ORDER ; i-- )); do
+        line_opt="${MENU_OPTION[$i]}"
+
+        if [[ "${line_opt,,}" == $pattern ]]; then
+          search_result="${MENU_OPTION[$i]}"
+          MENU_ORDER=$i
+          break
+        fi
+      done
+    fi
+  fi
+
+  if [[ ! -z "$search_result" ]]; then
+    if [[ -z $1 ]]; then
+      printf "\033[3A\033[0J"
+    fi
+    tmenu.select "${MENU_OPTION[@]}"
+  else
+    if [[ -z $1 ]]; then
+      read -rsn1 -p "Item not found!" key
+      echo
+      printf "\033[4A\033[0J"
     fi
   fi
 }
@@ -172,7 +189,28 @@ do
           break
         ;;
 
+        [0-9])
+          if [ $menu_key2 -lt ${#MENU_OPTION[@]} ] && [ "$menu_key2" -gt 0 ]; then
+            read -rsn1 menu_key3
+            if [[ $menu_key3 == [0-9] ]]; then
+			  MENU_ORDER=$menu_key2$menu_key3
+              tmenu.select "${MENU_OPTION[@]}"
+              TMENU_RESULT="$MENU_SELECTED"
+    	      break
+            fi
+          fi
+        ;;
+
         "s"|"S") tmenu.search ;;
+
+        "h"|"H")
+          local dotOpt=$(shopt -p dotglob)
+          if [[ "${dotOpt:7:1}" == "u" ]]; then
+            shopt -s dotglob
+          else shopt -u dotglob
+          fi
+		  break
+        ;;
 
         [a-zA-Z])
           TMENU_RESULT="$ESC_KEY$menu_key2"
@@ -214,7 +252,7 @@ do
       fi
     ;;
 
-    [a-z]) tmenu.search "$menu_key1" ;;
+    [a-zA-Z]) tmenu.search "$menu_key1" ;;
 
     "")
       # export TMENU_RESULT if compile to binary
