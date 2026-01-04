@@ -189,19 +189,41 @@ do
           break
         ;;
 
-        [0-9])
-          if [ $menu_key2 -lt ${#MENU_OPTION[@]} ] && [ "$menu_key2" -gt 0 ]; then
-            read -rsn1 menu_key3
-            if [[ $menu_key3 == [0-9] ]]; then
-			  MENU_ORDER=$menu_key2$menu_key3
-              tmenu.select "${MENU_OPTION[@]}"
-              TMENU_RESULT="$MENU_SELECTED"
-    	      break
-            fi
-          fi
+        0)
+          echo
+          exit
         ;;
 
-        "s"|"S") tmenu.search ;;
+        [1-9])
+          read -rsn1 menu_key3
+          case "$menu_key3" in
+            [0-9])
+              local order=$menu_key2$menu_key3
+              if [ $order -lt ${#MENU_OPTION[@]} ]; then
+                MENU_ORDER=$order
+                tmenu.select "${MENU_OPTION[@]}"
+                TMENU_RESULT="$MENU_SELECTED"
+                break
+              else
+			    echo
+                read -rsn1 -p "Wrong option $order! (1-$(( ${#MENU_OPTION[@]} - 1 )))" key
+                echo
+                printf "\033[2A\033[0J"
+              fi
+            ;;
+          esac
+        ;;
+
+        "c"|"C")
+          echo
+          read -rep "Command: " cmd
+          echo
+          eval "$cmd"
+          echo
+          read -rsn1 -p "Press any key to continue..." key
+          echo
+          break
+        ;;
 
         "h"|"H")
           local dotOpt=$(shopt -p dotglob)
@@ -211,6 +233,8 @@ do
           fi
 		  break
         ;;
+
+        "s"|"S") tmenu.search ;;
 
         [a-zA-Z])
           TMENU_RESULT="$ESC_KEY$menu_key2"
