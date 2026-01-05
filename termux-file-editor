@@ -7,23 +7,43 @@ ESC_KEY=$'\033'
 
 if [[ ! -z "$1" ]]; then
 	while IFS= read -r line; do
-		if [[ -z "$DST" ]]; then
-			DST="$line"
-		else SRC="$line"
+		if [[ -z "$TCMD_DST" ]]; then
+			TCMD_DST="$line"
+		else TCMD_SRC="$line"
 		fi
 	done < "$1"
 	unset IFS
-	echo "$(date +"%x %X") :: $SRC" >> ~/.tfe_history
+	echo "$(date +"%x %X") :: $TCMD_SRC" >> ~/.tfe_history
 fi
 
 action.dir() {
 	echo "Directory Action"
 	echo "----------------"
 	echo
-	tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Git" "5. Zip" "6. Zip to TCMD" "7. Detail"
+	if [[ -z "$DST" ]]; then
+		local actions=( "Copy to TCMD" "Copy" "Delete" "Git" "Zip" "Zip to TCMD" "Detail" )
+	else
+		local prevDST="$(basename "$DST")"
+		local actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Git" "Zip" "Zip to TCMD" "Detail" )
+	fi
+	tmenu "${actions[@]}"
 	case "$TMENU_RESULT" in
-		"1. Copy to TCMD")
-			if [[ -z "$DST" ]]; then
+		"Copy to TCMD")
+			if [[ -z "$TCMD_DST" ]]; then
+				read -rep "Destination: " TCMD_DST
+				echo
+				eval TCMD_DST="$TCMD_DST"
+			fi
+			cp -r "$1" "$TCMD_DST"
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Copy")
+			tmenu.fileExplorer "slDst"
+			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 				read -rep "Destination: " DST
 				echo
 				eval DST="$DST"
@@ -35,24 +55,32 @@ action.dir() {
 			fi
 			;;
 
-		"2. Copy")
-			local cpDst
-			read -rep "Destination: " cpDst
-			echo
-			eval cpDst="$cpDst"
-			cp -r "$1" "$cpDst"
+		"Copy to \"$prevDST\"")
+			cp -r "$1" "$DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
-		"3. Delete")
-			read -rn1 -p "Delete \"$1\"? (y/N): " key
+		"Delete")
+			local msg=""
+			if [[ "$1" == "." ]]; then
+				msg="Delete **All**? (y/N): "
+			else msg="Delete \"$1\"? (y/N): "
+			fi
+			read -rn1 -p "$msg" key
 			echo
 			echo
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
-				rm -rf "$1"
+				if [[ "$1" == "." ]]; then
+          		local dotOpt=$(shopt -p dotglob)
+          		dotOpt=${dotOpt:7:1}
+					shopt -s dotglob
+					rm -rf *
+					shopt -$dotOpt dotglob
+				else rm -rf "$1"
+				fi
 			fi
 			if [[ "$?" != 0 ]]; then
 				echo
@@ -61,7 +89,7 @@ action.dir() {
 			fi
 			;;
 
-		"4. Git")
+		"Git")
 			local cMsg
 			cd "$1"
 			read -rep "Message: " cMsg
@@ -74,7 +102,7 @@ action.dir() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"5. Zip")
+		"Zip")
 			local zDst
 			read -rep "Archive name: " zDst
 			eval zDst="$zDst"
@@ -83,19 +111,19 @@ action.dir() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"6. Zip to TCMD")
+		"Zip to TCMD")
 			local zDst
-			if [[ -z "$DST" ]]; then
-				read -rep "Directory Path: " DST
+			if [[ -z "$TCMD_DST" ]]; then
+				read -rep "Directory Path: " TCMD_DST
 			fi
 			read -rep "Archive name: " zDst
-			eval zDst="$DST$zDst"
+			eval zDst="$TCMD_DST$zDst"
 			7zz a -snl "$zDst" "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"7. Detail")
+		"Detail")
 			echo "Directory Detail"
 			echo "----------------"
 			echo
@@ -120,12 +148,12 @@ action.file() {
 
 	case "$TMENU_RESULT" in
 		"1. Copy to TCMD")
-			if [[ -z "$DST" ]]; then
-				read -rep "Destination: " DST
+			if [[ -z "$TCMD_DST" ]]; then
+				read -rep "Destination: " TCMD_DST
 				echo
-				eval DST="$DST"
+				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp "$1" "$DST"
+			cp "$1" "$TCMD_DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -173,29 +201,20 @@ action.file() {
 	esac
 }
 
-tmenu.create() {
-	if [[ -z "$search_result" ]]; then
-		tmenu "$@"
-	else 
-		tmenu "$search_result" "$@"
-		unset search_result
-	fi
-}
-
-tmenu.createDefault() {
-	if [[ -z "$search_result" ]]; then
-		tmenu "$@"
-	else 
-		tmenu "$search_result" "${@:2}"
-		unset search_result
-	fi
-}
-
 tmenu.fileExplorer() {
+	SRC="$(pwd)"
+	local title=""
+
 	while :; do
 		local file_list=( "." ".." )
 		local counter=1
 		local checkPrev=0
+
+		if [[ -z "$1" ]]; then
+			title="File explorer\n-------------\n\n$(pwd)\n(0: Action | 1: Directory)\n"
+		elif [[ "$1" == "slDst" ]]; then
+			title="Select Destination\n------------------\n\n$(pwd)\n(0: Select)\n"
+		fi
 
 		for file in *; do
 			(( ++counter ))
@@ -206,12 +225,7 @@ tmenu.fileExplorer() {
 		done
 
 		clear
-		echo "File explorer"
-		echo "-------------"
-		echo
-		echo "$(pwd)"
-		echo "(0: Action | 1: Directory)"
-		echo
+		echo -e "$title"
 
 		if [[ ! -z "$prevItem" && $checkPrev == 0 ]]; then
 			unset prevItem
@@ -228,7 +242,11 @@ tmenu.fileExplorer() {
 		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 			break
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
-			if [[ -d "$MENU_SELECTED" ]]; then
+			if [[ "$1" == "slDst" ]]; then
+				DST="$(pwd)"
+				TMENU_RESULT="$(pwd)"
+				break
+			elif [[ -d "$MENU_SELECTED" ]]; then
 				action.dir "$MENU_SELECTED"
 			elif [[ -f "$MENU_SELECTED" ]]; then
 				action.file "$MENU_SELECTED"
@@ -238,11 +256,17 @@ tmenu.fileExplorer() {
 		elif [[ -d "$TMENU_RESULT" ]]; then
 			cd "$TMENU_RESULT" 
 			WDIR="$(pwd)"
+			if [[ -z "$1" ]]; then
+				SRC="$(pwd)"
+			fi
 			unset prevItem
 		elif [[ -f "$TMENU_RESULT" ]]; then
 			action.file "$TMENU_RESULT"
 		fi
 	done
+	if [[ "$1" == "slDst" ]]; then
+		cd "$SRC"
+	fi
 }
 
 while :; do
@@ -254,15 +278,15 @@ while :; do
 	echo "           ##############################           "
 	echo
 
-	tmenu.create "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
+	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
 
 		"2. HASH check")
-			if [[ -z "$SRC" ]]; then
-				read -rep "File path: " SRC
-				eval SRC="$SRC"
+			if [[ -z "$TCMD_SRC" ]]; then
+				read -rep "File path: " TCMD_SRC
+				eval TCMD_SRC="$TCMD_SRC"
 			fi
 
 			while :; do
@@ -275,7 +299,7 @@ while :; do
 				case "$TMENU_RESULT" in
 					"1. SHA1")
 						echo === SHA1 ===
-						sha1sum "$SRC"
+						sha1sum "$TCMD_SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -287,7 +311,7 @@ while :; do
 
 					"2. SHA256")
 						echo === SHA256 ===
-						sha256sum "$SRC"
+						sha256sum "$TCMD_SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -299,7 +323,7 @@ while :; do
 					
 					"3. SHA384")
 						echo === SHA384 ===
-						sha384sum "$SRC"
+						sha384sum "$TCMD_SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -311,7 +335,7 @@ while :; do
 					
 					"4. SHA512")
 						echo === SHA512 ===
-						sha512sum "$SRC"
+						sha512sum "$TCMD_SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
@@ -323,7 +347,7 @@ while :; do
 					
 					"5. MD5")
 						echo === MD5 ===
-						md5sum "$SRC"
+						md5sum "$TCMD_SRC"
 						echo
 						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 						echo
