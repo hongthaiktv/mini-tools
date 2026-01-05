@@ -20,13 +20,16 @@ action.dir() {
 	echo "Directory Action"
 	echo "----------------"
 	echo
+
 	if [[ -z "$DST" ]]; then
 		local actions=( "Copy to TCMD" "Copy" "Delete" "Git" "Zip" "Zip to TCMD" "Detail" )
 	else
 		local prevDST="$(basename "$DST")"
 		local actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Git" "Zip" "Zip to TCMD" "Detail" )
 	fi
+
 	tmenu "${actions[@]}"
+
 	case "$TMENU_RESULT" in
 		"Copy to TCMD")
 			if [[ -z "$TCMD_DST" ]]; then
@@ -34,7 +37,7 @@ action.dir() {
 				echo
 				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp -r "$1" "$TCMD_DST"
+			cp -rf "$1" "$TCMD_DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -48,7 +51,7 @@ action.dir() {
 				echo
 				eval DST="$DST"
 			fi
-			cp -r "$1" "$DST"
+			cp -rf "$1" "$DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -56,7 +59,7 @@ action.dir() {
 			;;
 
 		"Copy to \"$prevDST\"")
-			cp -r "$1" "$DST"
+			cp -rf "$1" "$DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -65,41 +68,63 @@ action.dir() {
 
 		"Delete")
 			local msg=""
+			local dotOpt=""
+
 			if [[ "$1" == "." ]]; then
 				msg="Delete **All**? (y/N): "
 			else msg="Delete \"$1\"? (y/N): "
 			fi
+
 			read -rn1 -p "$msg" key
 			echo
 			echo
+
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
 				if [[ "$1" == "." ]]; then
-          		local dotOpt=$(shopt -p dotglob)
-          		dotOpt=${dotOpt:7:1}
-					shopt -s dotglob
-					rm -rf *
-					shopt -$dotOpt dotglob
+          			dotOpt=$(shopt -p dotglob)
+          			dotOpt=${dotOpt:7:1}
+					if [[ "$dotOpt" == "u" ]]; then
+						shopt -s dotglob
+						rm -rf *
+					else rm -rf *
+					fi
 				else rm -rf "$1"
 				fi
-			fi
-			if [[ "$?" != 0 ]]; then
-				echo
-				read -rsn1 -p "Press any key to continue..." key
-			else unset prevItem
+
+				if [[ "$?" != 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else unset prevItem
+				fi
+
+				if [[ "$dotOpt" == "u" ]]; then
+					shopt -u dotglob
+				fi
 			fi
 			;;
 
 		"Git")
-			local cMsg
+			local cMsg=""
 			cd "$1"
-			read -rep "Message: " cMsg
+			read -rn1 -p "(p)ull/(P)ush? " key
 			echo
-			git add .
-			git commit -m "$cMsg"
-			git push
+
+			if [[ -z "$key" || "$key" == "P" ]]; then
+				read -rep "Message: " cMsg
+				echo
+				git add .
+				git commit -m "$cMsg"
+				git push
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			elif [[ "$key" == "p" ]]; then
+				echo
+				git pull
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+
 			cd "$WDIR"
-			echo
-			read -rsn1 -p "Press any key to continue..." key
 			;;
 
 		"Zip")
@@ -141,56 +166,80 @@ action.file() {
 	echo "-----------"
 	echo
 
-	if [[ "$1" == *.zip || "$1" == *.7z || "$1" == *.gz || "$1" == *.xz || "$1" == *.tar || "$1" == *.rar ]]; then
-		tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Edit" "5. Extract"
-	else tmenu "1. Copy to TCMD" "2. Copy" "3. Delete" "4. Edit"
+	if [[ -z "$DST" ]]; then
+		local actions=( "Copy to TCMD" "Copy" "Delete" "Edit" )
+	else
+		local prevDST="$(basename "$DST")"
+		local actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Edit" )
 	fi
 
+	if [[ "$1" == *.zip || "$1" == *.7z || "$1" == *.gz || "$1" == *.xz || "$1" == *.tar || "$1" == *.rar ]]; then
+		actions=( "${actions[@]}" "Extract" )
+	fi
+
+	tmenu "${actions[@]}"
+
 	case "$TMENU_RESULT" in
-		"1. Copy to TCMD")
+		"Copy to TCMD")
 			if [[ -z "$TCMD_DST" ]]; then
 				read -rep "Destination: " TCMD_DST
 				echo
 				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp "$1" "$TCMD_DST"
+			cp -f "$1" "$TCMD_DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
-		"2. Copy")
-			local cpDst
-			read -rep "Destination: " cpDst
-			echo
-			eval cpDst="$cpDst"
-			cp "$1" "$cpDst"
+		"Copy")
+			local cDST=""
+			tmenu.fileExplorer "slDst"
+			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+				read -rep "Destination: " cDST
+				echo
+				eval cDST="$cDST"
+				cp -f "$1" "$cDST"
+			else
+				cp -f "$1" "$DST"
+			fi
+
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
-		"3. Delete")
-			read -rn1 -p "Delete \"$1\"? (y/N): " key
+		"Copy to \"$prevDST\"")
+			cp -f "$1" "$DST"
+			if [[ "$?" != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Delete")
+			local msg="Delete \"$1\"? (y/N): "
+			read -rn1 -p "$msg" key
 			echo
 			echo
+
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
 				rm -f "$1"
-			fi
-			if [[ "$?" != 0 ]]; then
-				echo
-				read -rsn1 -p "Press any key to continue..." key
-			else unset prevItem
+				if [[ "$?" != 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else unset prevItem
+				fi
 			fi
 			;;
 
-		"4. Edit")
+		"Edit")
 			vim "$1"
 			;;
 
-		"5. Extract")
+		"Extract")
 			local zDst
 			read -rep "Destination: " zDst
 			eval zDst="$zDst"
@@ -204,6 +253,7 @@ action.file() {
 tmenu.fileExplorer() {
 	SRC="$(pwd)"
 	local title=""
+	local prevItem=""
 
 	while :; do
 		local file_list=( "." ".." )
@@ -227,14 +277,10 @@ tmenu.fileExplorer() {
 		clear
 		echo -e "$title"
 
-		if [[ ! -z "$prevItem" && $checkPrev == 0 ]]; then
-			unset prevItem
+		if [[ -z "$prevItem" || ! -z "$prevItem" && $checkPrev == 0 ]]; then
+			prevItem=${file_list[2]}
 		fi
 		
-		if [[ -z "$prevItem" ]]; then
-			local prevItem=${file_list[2]}
-		fi
-
 		tmenu "$prevItem" "${file_list[@]}"
 		
 		prevItem="$MENU_SELECTED"
