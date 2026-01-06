@@ -1,15 +1,30 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 tmenu() {
-  local OPTION_COLOR=${MENU_OPTION_COLOR:-2}
+  local OPTION_COLOR=${MENU_LIST_COLOR:-2}
   local SELECTED_COLOR=${MENU_SELECTED_COLOR:-46}
   local ARROW_COLOR=${MENU_ARROW_COLOR:-91}
   local ESC_KEY=$'\033'
   local ARROW_UP='A'
   local ARROW_DOWN='B'
+  local MENU_OPTION=( "-c" "-n" "-s" )
+  declare -a user_option
+  MENU_LIST=( "$@" )
   unset MENU_ORDER
-  MENU_OPTION=( "$@" )
-  MENU_SELECTED="$1"
+
+  for (( i=0 ; i<${#MENU_LIST[@]} ; i++ )); do
+    local setOpt="${MENU_LIST[$i]}"
+    for option in "${MENU_OPTION[@]}"; do
+      if [[ "$setOpt" == "$option" ]]; then
+        user_option=( "$setOpt" "${user_option[@]}" )
+        unset MENU_LIST[$i]
+		MENU_LIST=( "${MENU_LIST[@]}" )
+		(( --i ))
+      fi
+    done
+  done
+
+  MENU_SELECTED="${MENU_LIST[0]}"
 
   if [ ${#MENU_SELECTED} -gt 44 ]; then
 	  MENU_SELECTED="${MENU_SELECTED:0:44}..."
@@ -19,7 +34,7 @@ unset TMENU_RESULT
 printf "\033[?25l"
 
 tmenu.color() {
-  MENU_OPTION_COLOR=${1:-2}
+  MENU_LIST_COLOR=${1:-2}
   MENU_SELECTED_COLOR=${2:-46}
   MENU_ARROW_COLOR=${3:-91}
 }
@@ -31,7 +46,7 @@ if [ "$1" = "--color" ]
         tmenu.color "$3" "$4" "$5"
       else
         tmenu.color "$2" "$3" "$4"
-        echo "Menu color changed to '$MENU_OPTION_COLOR $MENU_SELECTED_COLOR $MENU_ARROW_COLOR'."
+        echo "Menu color changed to '$MENU_LIST_COLOR $MENU_SELECTED_COLOR $MENU_ARROW_COLOR'."
         echo
     fi
     return
@@ -62,10 +77,10 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 fi
 
 tmenu.search() {
-  declare -l local search
+  declare -l search=""
   local pattern
-  local line_opt
-  local search_result
+  local list_item=""
+  local search_result=""
 
   if [[ -z $1 ]]; then
     echo
@@ -78,11 +93,11 @@ tmenu.search() {
   fi
   
   if [[ "$menu_key1" == [a-z] || "$menu_key2" == "s" && -z "$1" ]]; then
-    for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_OPTION[@]} ; i++ )); do
-      line_opt="${MENU_OPTION[$i]}"
+    for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_LIST[@]} ; i++ )); do
+      list_item="${MENU_LIST[$i]}"
 
-      if [[ "${line_opt,,}" == $pattern ]]; then
-        search_result="${MENU_OPTION[$i]}"
+      if [[ "${list_item,,}" == $pattern ]]; then
+        search_result="${MENU_LIST[$i]}"
         MENU_ORDER=$i
         break
       fi
@@ -90,10 +105,10 @@ tmenu.search() {
 
     if [[ -z "$search_result" ]]; then
       for (( i=1 ; i<=$MENU_ORDER ; i++ )); do
-        line_opt="${MENU_OPTION[$i]}"
+        list_item="${MENU_LIST[$i]}"
 
-        if [[ "${line_opt,,}" == $pattern ]]; then
-          search_result="${MENU_OPTION[$i]}"
+        if [[ "${list_item,,}" == $pattern ]]; then
+          search_result="${MENU_LIST[$i]}"
           MENU_ORDER=$i
           break
         fi
@@ -101,21 +116,21 @@ tmenu.search() {
     fi
   elif [[ "$menu_key1" == [A-Z] || "$menu_key2" == "S" && -z "$1" ]]; then
     for (( i=$(( $MENU_ORDER - 1 )) ; i>0 ; i-- )); do
-      line_opt="${MENU_OPTION[$i]}"
+      list_item="${MENU_LIST[$i]}"
 
-      if [[ "${line_opt,,}" == $pattern ]]; then
-        search_result="${MENU_OPTION[$i]}"
+      if [[ "${list_item,,}" == $pattern ]]; then
+        search_result="${MENU_LIST[$i]}"
         MENU_ORDER=$i
         break
       fi
     done
 
     if [[ -z "$search_result" ]]; then
-		for (( i=$(( ${#MENU_OPTION[@]} - 1 )) ; i>=$MENU_ORDER ; i-- )); do
-        line_opt="${MENU_OPTION[$i]}"
+		for (( i=$(( ${#MENU_LIST[@]} - 1 )) ; i>=$MENU_ORDER ; i-- )); do
+        list_item="${MENU_LIST[$i]}"
 
-        if [[ "${line_opt,,}" == $pattern ]]; then
-          search_result="${MENU_OPTION[$i]}"
+        if [[ "${list_item,,}" == $pattern ]]; then
+          search_result="${MENU_LIST[$i]}"
           MENU_ORDER=$i
           break
         fi
@@ -127,7 +142,7 @@ tmenu.search() {
     if [[ -z $1 ]]; then
       printf "\033[3A\033[0J"
     fi
-    tmenu.select "${MENU_OPTION[@]}"
+    tmenu.select "${MENU_LIST[@]}"
   else
     if [[ -z $1 ]]; then
       read -rsn1 -p "Item not found!" key
@@ -138,43 +153,43 @@ tmenu.search() {
 }
 
 tmenu.show() {
-for (( i=1; i<${#MENU_OPTION[@]}; i++ ))
+for (( i=1; i<${#MENU_LIST[@]}; i++ ))
 do
-  local line_opt="${MENU_OPTION[$i]}"
-  if [ ${#line_opt} -gt 44 ]; then
-	  line_opt="${line_opt:0:44}..."
+  local list_item="${MENU_LIST[$i]}"
+  if [ ${#list_item} -gt 44 ]; then
+	  list_item="${list_item:0:44}..."
   fi
-  if [ "$MENU_SELECTED" = "$line_opt" ]
+  if [ "$MENU_SELECTED" = "$list_item" ]
     then
-      printf "\033[%sm>>\033[0m \033[%sm%s\033[0m\n" "$ARROW_COLOR" "$SELECTED_COLOR" "$line_opt"
+      printf "\033[%sm>>\033[0m \033[%sm%s\033[0m\n" "$ARROW_COLOR" "$SELECTED_COLOR" "$list_item"
       if [ -z $MENU_ORDER ]
         then
           MENU_ORDER=$i
       fi
-      MENU_SELECTED="${MENU_OPTION[$i]}"
+      MENU_SELECTED="${MENU_LIST[$i]}"
     else
-      printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$line_opt"
+      printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
   fi
 done
 }
 
 tmenu.select() {
-  printf "\033[$(( ${#MENU_OPTION[@]} - 1 ))A\033[0J"
-  MENU_SELECTED="${MENU_OPTION[$MENU_ORDER]}"
+  printf "\033[$(( ${#MENU_LIST[@]} - 1 ))A\033[0J"
+  MENU_SELECTED="${MENU_LIST[$MENU_ORDER]}"
   if [ ${#MENU_SELECTED} -gt 44 ]; then
 	  MENU_SELECTED="${MENU_SELECTED:0:44}..."
   fi
-  tmenu.show "$@"
+  tmenu.show "${MENU_LIST[@]}"
 }
 
-tmenu.show "$@"
+tmenu.show "${MENU_LIST[@]}"
 
 if [ -z $MENU_ORDER ]
   then
     # Set missing default option to first option
-    printf "\033[$(( ${#MENU_OPTION[@]} - 1 ))A\033[0J"
-    MENU_OPTION=( "$1" "$@" )
-    tmenu.show "${MENU_OPTION[@]}"
+    printf "\033[$(( ${#MENU_LIST[@]} - 1 ))A\033[0J"
+    MENU_LIST=( "${MENU_LIST[0]}" "${MENU_LIST[@]}" )
+    tmenu.show "${MENU_LIST[@]}"
 fi
 
 while :
@@ -199,14 +214,14 @@ do
           case "$menu_key3" in
             [0-9])
               local order=$menu_key2$menu_key3
-              if [ $order -lt ${#MENU_OPTION[@]} ]; then
+              if [ $order -lt ${#MENU_LIST[@]} ]; then
                 MENU_ORDER=$order
-                tmenu.select "${MENU_OPTION[@]}"
+                tmenu.select "${MENU_LIST[@]}"
                 TMENU_RESULT="$MENU_SELECTED"
                 break
               else
 			    echo
-                read -rsn1 -p "Wrong option $order! (1-$(( ${#MENU_OPTION[@]} - 1 )))" key
+                read -rsn1 -p "Wrong option $order! (1-$(( ${#MENU_LIST[@]} - 1 )))" key
                 echo
                 printf "\033[2A\033[0J"
               fi
@@ -248,15 +263,15 @@ do
               if [ "$MENU_ORDER" -gt "1" ]
                 then
                   (( --MENU_ORDER ))
-                  tmenu.select "${MENU_OPTION[@]}"
+                  tmenu.select "${MENU_LIST[@]}"
               fi
             ;;
 
             "$ARROW_DOWN")
-				if [ $MENU_ORDER -lt $(( ${#MENU_OPTION[@]} - 1 )) ]
+				if [ $MENU_ORDER -lt $(( ${#MENU_LIST[@]} - 1 )) ]
                 then
                   (( ++MENU_ORDER ))
-                  tmenu.select "${MENU_OPTION[@]}"
+                  tmenu.select "${MENU_LIST[@]}"
               fi
             ;;
           esac
@@ -268,9 +283,9 @@ do
       if [ $menu_key1 -eq 0 ]; then
 		TMENU_RESULT=$menu_key1
     	break
-      elif [ $menu_key1 -lt ${#MENU_OPTION[@]} ] && [ "$menu_key1" -gt 0 ]; then
+      elif [ $menu_key1 -lt ${#MENU_LIST[@]} ] && [ "$menu_key1" -gt 0 ]; then
         MENU_ORDER=$menu_key1
-        tmenu.select "${MENU_OPTION[@]}"
+        tmenu.select "${MENU_LIST[@]}"
         TMENU_RESULT="$MENU_SELECTED"
     	break
       fi
@@ -289,5 +304,5 @@ echo
 printf "\033[?25h"
 }
 
-# Call tmenu "$@" if compile to binary
+# Call tmenu "${MENU_LIST[@]}" if compile to binary
 
