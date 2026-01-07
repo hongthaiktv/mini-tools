@@ -190,12 +190,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 					"$ESC_KEY")
 						TMENU_RESULT="$ESC_KEY"
 						break
-					;;
+						;;
 
 					0)
 						echo
 						exit
-					;;
+						;;
 
 					[1-9])
 						read -rsn1 menu_key3
@@ -213,9 +213,9 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 									echo
 									printf "\033[2A\033[0J"
 								fi
-							;;
+								;;
 						esac
-					;;
+						;;
 
 					"c"|"C")
 						echo
@@ -226,7 +226,7 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 						read -rsn1 -p "Press any key to continue..." key
 						echo
 						break
-					;;
+						;;
 
 					"h"|"H")
 						local dotOpt=$(shopt -p dotglob)
@@ -236,14 +236,14 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 							shopt -u dotglob
 						fi
 						break
-					;;
+						;;
 
 					"s"|"S") tmenu.search ;;
 
 					[a-zA-Z])
 						TMENU_RESULT="$ESC_KEY$menu_key2"
 						break
-					;;
+						;;
 
 					"[")
 						read -rsn1 menu_key3
@@ -253,18 +253,18 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 									(( --MENU_ORDER ))
 									tmenu.select "${MENU_LIST[@]}"
 								fi
-							;;
+								;;
 
 							"$ARROW_DOWN")
 								if [[ $MENU_ORDER -lt $(( ${#MENU_LIST[@]} - 1 )) ]]; then
 									(( ++MENU_ORDER ))
 									tmenu.select "${MENU_LIST[@]}"
 								fi
-							;;
+								;;
 						esac
-					;;
+						;;
 				esac
-			;;  
+				;;  
 
 			[0-9])
 				if [[ $menu_key1 -eq 0 ]]; then
@@ -276,7 +276,7 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 					TMENU_RESULT="$MENU_SELECTED"
 					break
 				fi
-			;;
+				;;
 
 			[a-zA-Z]) tmenu.search "$menu_key1" ;;
 
@@ -284,7 +284,7 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 				# export TMENU_RESULT if compile to binary
 				TMENU_RESULT="$MENU_SELECTED"
 				break
-			;;
+				;;
 		esac
 	done
 	echo

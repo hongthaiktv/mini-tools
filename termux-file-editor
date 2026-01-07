@@ -44,7 +44,7 @@ action.dir() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
-		;;
+			;;
 
 		"Copy")
 			tmenu.fileExplorer "slDst"
@@ -58,7 +58,7 @@ action.dir() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
-		;;
+			;;
 
 		"Copy to \"$prevDST\"")
 			cp -rf "$1" "$DST"
@@ -66,7 +66,7 @@ action.dir() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
-		;;
+			;;
 
 		"Delete")
 			local msg=""
@@ -103,7 +103,7 @@ action.dir() {
 					shopt -u dotglob
 				fi
 			fi
-		;;
+			;;
 
 		"Git")
 			local cMsg=""
@@ -127,7 +127,7 @@ action.dir() {
 			fi
 
 			cd "$WDIR"
-		;;
+			;;
 
 		"Zip")
 			local zDst
@@ -136,7 +136,7 @@ action.dir() {
 			7zz a -snl "$zDst" "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-		;;
+			;;
 
 		"Zip to TCMD")
 			local zDst
@@ -148,7 +148,7 @@ action.dir() {
 			7zz a -snl "$zDst" "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-		;;
+			;;
 
 		"Detail")
 			echo "Directory Detail"
@@ -159,7 +159,7 @@ action.dir() {
 			ls -lh "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-		;;
+			;;
 	esac
 }
 
@@ -193,7 +193,7 @@ action.file() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
-		;;
+			;;
 
 		"Copy")
 			local cDST=""
@@ -211,7 +211,7 @@ action.file() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
-		;;
+			;;
 
 		"Copy to \"$prevDST\"")
 			cp -f "$1" "$DST"
@@ -219,7 +219,7 @@ action.file() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
-		;;
+			;;
 
 		"Delete")
 			local msg="Delete \"$1\"? (y/N): "
@@ -235,11 +235,11 @@ action.file() {
 				else unset prevItem
 				fi
 			fi
-		;;
+			;;
 
 		"Edit")
 			vim "$1"
-		;;
+			;;
 
 		"Extract")
 			local zDst
@@ -248,7 +248,7 @@ action.file() {
 			7zz x -o"$zDst" "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-		;;
+			;;
 	esac
 }
 
@@ -355,7 +355,7 @@ while :; do
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
-					;;
+						;;
 
 					"2. SHA256")
 						echo === SHA256 ===
@@ -367,7 +367,7 @@ while :; do
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
-					;;
+						;;
 					
 					"3. SHA384")
 						echo === SHA384 ===
@@ -379,7 +379,7 @@ while :; do
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
-					;;
+						;;
 					
 					"4. SHA512")
 						echo === SHA512 ===
@@ -391,7 +391,7 @@ while :; do
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
-					;;
+						;;
 					
 					"5. MD5")
 						echo === MD5 ===
@@ -403,20 +403,20 @@ while :; do
 						if [[ "$key" == "$ESC_KEY" ]]; then
 							exit
 						fi
-					;;
+						;;
 
 					"6. Back" | "$ESC_KEY")
 						unset TMENU_RESULT
 						break
-					;;
+						;;
 
 					"0" | "$ESC_KEY")
 						unset TMENU_RESULT
 						break
-					;;
+						;;
 				esac
 			done
-		;;
+			;;
 
 		"3. Backup document")
 			cd ~/docs
@@ -431,7 +431,7 @@ while :; do
 			if [[ "$key" == "$ESC_KEY" ]]; then
 				exit
 			fi
-		;;
+			;;
 
 		"4. Vim") vim ;;
 
@@ -439,7 +439,7 @@ while :; do
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-		;;
+			;;
 
 		"6. Exit" | "0" | "$ESC_KEY") exit ;;
 	esac
