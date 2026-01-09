@@ -2,7 +2,7 @@
 
 source /data/data/com.termux/files/home/bin/tmenu.sh
 
-#tmenu -z aaa bbb -n ccc -d
+#tmenu -c aaa bbb -cns ccc -s
 
 WDIR="$(pwd)"
 ESC_KEY=$'\033'

@@ -7,6 +7,8 @@ tmenu() {
 	local ESC_KEY=$'\033'
 	local ARROW_UP='A'
 	local ARROW_DOWN='B'
+	local HOME_KEY='H'
+	local END_KEY='F'
 	local MENU_OPTION=( "-c" "-n" "-s" )
 	declare -a user_option
 	MENU_LIST=( "$@" )
@@ -17,6 +19,11 @@ tmenu() {
 
 	for (( i=0 ; i<${#MENU_LIST[@]} ; i++ )); do
 		local setOpt="${MENU_LIST[$i]}"
+		if [[ "$setOpt" == "-"* ]]; then
+			for (( i=1 ; i<${#setOpt} ; i++ )); do
+				echo "opt: ${setOpt:1:1}."
+			done
+		fi
 		for option in "${MENU_OPTION[@]}"; do
 			if [[ "$setOpt" == "$option" ]]; then
 				user_option=( "$setOpt" "${user_option[@]}" )
@@ -261,6 +268,17 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 									tmenu.select "${MENU_LIST[@]}"
 								fi
 								;;
+
+							"$HOME_KEY")
+								MENU_ORDER=1
+								tmenu.select "${MENU_LIST[@]}"
+								;;
+
+							"$END_KEY")
+								MENU_ORDER=$(( ${#MENU_LIST[@]} - 1 ))
+								tmenu.select "${MENU_LIST[@]}"
+								;;
+
 						esac
 						;;
 				esac
