@@ -164,20 +164,40 @@ action.dir() {
 }
 
 action.file() {
+	declare -a actions
 	echo "File Action"
 	echo "-----------"
 	echo
 
 	if [[ -z "$DST" ]]; then
-		local actions=( "Copy to TCMD" "Copy" "Delete" "Edit" )
+		actions=( "Copy to TCMD" "Copy" "Delete" "Edit" )
 	else
 		local prevDST="$(basename "$DST")"
-		local actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Edit" )
+		actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Edit" )
 	fi
 
-	if [[ "$1" == *.zip || "$1" == *.7z || "$1" == *.gz || "$1" == *.xz || "$1" == *.tar || "$1" == *.rar ]]; then
-		actions=( "${actions[@]}" "Extract" )
-	fi
+	case "$1" in
+		*".zip"|*".7z"|*".gz"|*".xz"|*".tar"|*".rar")
+			actions+=( "Extract" )
+			;;
+
+		*".sh")
+			actions+=( "Run Shell" )
+			;;
+
+		*".js"|*".cjs"|*".mjs")
+			actions+=( "Run Node.js" )
+			actions+=( "Run NodeMon" )
+			;;
+
+		*".class")
+			actions+=( "Run Java" )
+			;;
+
+		*".java")
+			actions+=( "Compile Java" )
+			;;
+	esac
 
 	tmenu "${actions[@]}"
 
@@ -246,6 +266,36 @@ action.file() {
 			read -rep "Destination: " zDst
 			eval zDst="$zDst"
 			7zz x -o"$zDst" "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Run Shell")
+			bash "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Run Node.js")
+			node "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Run NodeMon")
+			nodemon "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Run Java")
+			java "${1:0: -6}"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Compile Java")
+			javac "$1" && java "${1:0: -5}"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
