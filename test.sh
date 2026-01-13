@@ -27,8 +27,32 @@ mainFn () {
 mainFn
 echo "$_"
 
+var str="end cmd with ;";
+let a = {
+	name: "string name",
+	value: 22
+};
 
-1.
+const json = [
+	{
+		"jkey": "key value",
+		"boolean": true
+	}
+];
+
+var arr = [ "str1", "str 2", "str 3 3" ];
+
+let html = `
+<html>
+	<head>
+		<title>Test Page</title>
+	</head>
+	<body>
+		<p class="css" style="color: red;">some para text</p>
+		<div>some div text</div>
+	</body>
+</html>
+`
 1.
 1.
 1.

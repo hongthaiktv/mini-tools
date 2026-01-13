@@ -4,8 +4,20 @@ source /data/data/com.termux/files/home/bin/tmenu.sh
 
 #tmenu -c aaa bbb -cns ccc -s
 
+#			FG(N)	BG(N)	FG(L)	BG(L)
+#	Black	30		40		90		100
+#	Red		31		41		91		101
+#	Green	32		42		92		102
+#	Yellow	33		43		93		103
+#	Blue	34		44		94		104
+#	Magenta	35		45		95		105
+#	Cyan	36		46		96		106
+#	White	37		47		97		107
+
 WDIR="$(pwd)"
 ESC_KEY=$'\033'
+ERROR_COLOR=91
+CMD_COLOR=96
 
 if [[ ! -z "$1" ]]; then
 	while IFS= read -r line; do
@@ -18,6 +30,12 @@ if [[ ! -z "$1" ]]; then
 	echo "$(date +"%x %X") :: $TCMD_SRC" >> ~/.tfe_history
 fi
 
+runCmd () {
+	eval "$1"
+	if [[ $? != 0 ]]; then
+		TFE_ERR+=( "$1" )
+	fi
+}
 action.dir() {
 	echo "Directory Action"
 	echo "----------------"
@@ -376,7 +394,7 @@ while :; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. Vim" "5. History" "6. Exit"
+	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. Backup Vim" "5. Vim" "6. History" "7. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
@@ -483,15 +501,39 @@ while :; do
 			fi
 			;;
 
-		"4. Vim") vim ;;
+		"4. Backup Vim")
+			TFE_ERR=()
+			runCmd "mkdir -p '$HOME/../usr/tmp/vim/.config/coc'"
+			runCmd "mkdir -p '$HOME/../usr/tmp/vim/.vim/plugged/coc.nvim/plugin'"
+			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim/vim.bak.zip' '$HOME/../usr/tmp/vim/.'"
+			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim/vim.bak.zip' '$HOME/.vimrc'"
+			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim/vim.bak.zip' '$HOME/.config/coc/ultisnips'"
 
-		"5. History")
+			if [[ ${#TFE_ERR[@]} > 0 ]]; then
+				echo
+				printf "Total \033[%sm${#TFE_ERR[@]}\033[0m error when backup:\n" $ERROR_COLOR
+				for errCmd in "${TFE_ERR[@]}"; do
+					[[ $errCmd =~ (^[a-zA-Z]+)" "(.*) ]]
+					cmd="${BASH_REMATCH[1]}"
+					params="${BASH_REMATCH[2]}"
+					printf "\t\033[%sm$cmd\033[0m $params\n" $CMD_COLOR
+				done
+#			else
+#				echo "Backup complete!"
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"5. Vim") vim ;;
+
+		"6. History")
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"6. Exit" | "0" | "$ESC_KEY") exit ;;
+		"7. Exit" | "0" | "$ESC_KEY") exit ;;
 	esac
 done
 
