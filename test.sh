@@ -8,6 +8,7 @@ object=(
 #echo "${#object[@]}  |  ${!object[@]}  |  ${object[@]}"
 
 array=( "value1" "value2" )
+
 for (( i=1 ; i<3 ; i++ )); do
 	array+=( "add$i" )
 done
