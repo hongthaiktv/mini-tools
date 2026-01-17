@@ -57,7 +57,7 @@ action.dir() {
 				echo
 				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp -rf "$1" "$TCMD_DST"
+			cp -rf "./$1" "$TCMD_DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -71,7 +71,7 @@ action.dir() {
 				echo
 				eval DST="$DST"
 			fi
-			cp -rf "$1" "$DST"
+			cp -rf "./$1" "$DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -79,7 +79,7 @@ action.dir() {
 			;;
 
 		"Copy to \"$prevDST\"")
-			cp -rf "$1" "$DST"
+			cp -rf "./$1" "$DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -108,7 +108,7 @@ action.dir() {
 						rm -rf *
 					else rm -rf *
 					fi
-				else rm -rf "$1"
+				else rm -rf "./$1"
 				fi
 
 				if [[ "$?" != 0 ]]; then
@@ -226,7 +226,7 @@ action.file() {
 				echo
 				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp -f "$1" "$TCMD_DST"
+			cp -f "./$1" "$TCMD_DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -240,9 +240,9 @@ action.file() {
 				read -rep "Destination: " cDST
 				echo
 				eval cDST="$cDST"
-				cp -f "$1" "$cDST"
+				cp -f "./$1" "$cDST"
 			else
-				cp -f "$1" "$DST"
+				cp -f "./$1" "$DST"
 			fi
 
 			if [[ "$?" != 0 ]]; then
@@ -252,7 +252,7 @@ action.file() {
 			;;
 
 		"Copy to \"$prevDST\"")
-			cp -f "$1" "$DST"
+			cp -f "./$1" "$DST"
 			if [[ "$?" != 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -266,7 +266,7 @@ action.file() {
 			echo
 
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
-				rm -f "$1"
+				rm -f "./$1"
 				if [[ "$?" != 0 ]]; then
 					echo
 					read -rsn1 -p "Press any key to continue..." key
