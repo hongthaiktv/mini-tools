@@ -523,7 +523,7 @@ while :; do
 			runCmd "cp -rf '/storage/emulated/0/Download/vim.zip' '$HOME/bin'"
 			runCmd "rm -rf '$TMPDIR/vim'"
 			echo
-			echo Git Push Update --------------------
+			echo ">>>>>>>>>> Git Push Update <<<<<<<<<<"
 			echo
 			read -rep "Message: " cMsg
 			echo
