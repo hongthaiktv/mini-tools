@@ -1,0 +1,2074 @@
+﻿Text Manipulate
+	Syntax:	[N][register]command
+			:[range]command [register]
+
+	i		Insert mode
+	I		Insert mode at beginning of line
+	A		Insert mode at end of line
+	R		Replace mode
+	r		replace [N]characters
+	gh		select then insert
+	gv		reselect previously highlighted
+	v		highlight [N]characters
+	V		[N]lines selection
+	Ctrl-V	block selection, start with [N]characters
+	Ctrl-G	switch between Select/Visual mode
+	ggVG	select all
+	y		copy selected
+	p		[N]paste after cursor
+	P		[N]paste before cursor
+	d		cut/delete
+	D		cut/delete to end
+	c		cut/delete then insert
+	C		cut/delete to end then insert
+	x		delete [N]characters
+	s		delete [N]characters then insert
+	u		undo
+	Ctrl-R	redo
+	Ctrl-A	increase number by 1|[N] times
+	Ctrl-X	decrease number by 1|[N] times
+	{V}g+Ctrl-A		increase number by 1|[N] times in subsequence
+	{V}g+Ctrl-X		decrease number by 1|[N] times in subsequence
+
+	Line
+		o		insert new line below
+		O		insert new line above
+		yy | Y	copy [N]lines
+		:y		copy line|range
+		dd		delete [N]lines
+		:d		delete line|range
+		d-Up|Down		delete current line and next Up|Down line
+		yyp | :copy.	duplicate line
+		:m{line}		move current line to "line"		Ex: :m0		move to top
+		:start,end{command}		range selection			Ex: :.,$t$	copy to end
+		>> | {V}> | :>		indent [N]|highlight|range lines rightwards
+		<< | {V}< | :<		indent [N]|highlight|range lines leftwards
+		:[range]left|center|right [width]		align line|range by column "width"
+		
+		Selector
+			0		: top		Ex: :copy0
+			^		: start		Ex: y^
+			$		: bottom | end		Ex: :$y | y$
+			.		: current
+			*		: previous selected
+			%		: all
+			.-2		: previous
+			.+1		: next
+
+	Insert Mode
+		Ctrl-O			run one time command
+		Ctrl-R+"		paste
+		Ctrl-Q+{key}	print key code
+	
+	Visual Mode
+		U			convert to uppercase
+		u			convert to lowercase
+		~			invert the case
+Save
+	:w [file]		save current file or create new
+	:wa				save all
+	:x [file] | ZZ	save and exit
+	:xa				save all and exit
+	:wq [file]		always save and exit
+
+Quit
+	:q				exit Vim
+	:q! | ZQ		discard and exit
+
+Search (Regex support)
+	/pattern		search pattern
+	/pattern\c		ignore case sensitive
+	/pattern\C		case sensitive
+	/\<pattern\>	search whole word
+	n				jump to next matched
+	N				jump to previous matched
+	*				search current word forwards
+	#				search current word backwards
+	/-arrow_up		previous search pattern
+	/-arrow_down	next search pattern
+
+	Tip: using :let @/ = "text" to set value for search register ("/)
+	Bug: after set new value can using Ctrl-R+/ | "/ to obtain value but can't with arrow <Up> in search history.
+
+Search and Replace (Regex support)
+	Syntax: :[range]s/{pattern}/{string}/[flags] [count]
+
+	:s/search_pattern/replace_string/		first occurrence in line
+	:s/search_pattern/replace_string/g		all matched in line
+	:%s/search_pattern/replace_string/g		all matched in file
+	:*s/\(search_pattern\)/\1/						search in selected
+
+	Replacement Pattern
+		\U		: uppercase everything after
+		\L		: lowercase everything after
+		\u		: uppercase the first character
+		\l		: lowercase the first character
+		\e | \E	: stops the uppercasing or lowercasing
+
+	Note: Must use "\(" and "\)" for grouping in regex instead of "()".
+
+Sorting (Regex support)
+	Syntax:	:[range]sort[!] [option] [/pattern/]		sort lines in all|range ASC|DESC [!]
+		
+		Option
+			i	: ignore case
+			u	: unique (group matched)
+			r	: reverse pattern match (unmatch)
+
+Navigation
+	gg | Ctrl-Home | :1		move to top
+	G | Ctrl-End | :$		move to bottom
+	:line | line-G			go to "line" number
+	f{char} | F{char}		go to next|previous "char"
+	g;			[N]previous changed position
+	g,			[N]next changed position
+	:changes	change list
+
+	Mark
+		m{a-z} | :mark {a-z}	create current buffer mark
+		m{A-Z} | :mark {A-Z}	create file mark
+		m` | m' | :mark '		create previous mark
+		`` | ''			jump to previous position
+		`{a-zA-Z0-9}	jump to buffer|file position marked
+		'{a-zA-Z0-9}	jump to buffer|file line marked
+		`0 | '0			open latest file
+		:marks [mark]	list all|mark
+		:delm {marks}	delete marks. "marks" can be list or range		Ex: :delm a B 1 | :delm a-d	(can't delete the "'" mark)
+		:delm!			delete all current buffer marks, but not A-Z and 0-9
+
+		Note: Numbered marks (0-9) can't set directly, it auto marked when exit vim only (recent list).
+	
+	Tag (cross files reference)
+		Ctrl-] | :tag {name}	jump to tag under cursor|name
+		Ctrl-T | :pop			jump to [N]previous
+		:tag		jump to [N]next
+		:0tag		jump to recently
+		:tags		show tag stack
+
+Clipboard
+	["{a-z}]command			overwrite register content		Ex: "ay (copy selected text to register "a")
+	["{A-Z}]command			append content to register		Ex: "aP (paste content from register "a")
+	:{y|d} [register]		copy|delete to "register"
+	:[line]put [register]	paste from "register" after "line"
+	:[line]put! [register]	paste from "register" before "line"
+	:reg [register]			display all|register contents
+	:set cpoptions+=>		set break line when append content to register
+
+	Insert Mode
+		Ctrl-R+{register}	paste from register
+
+	Register Type
+		""			: unnamed register (all operation)
+		"{0-9}		: numbered registers (0: latest copy, 1-9: recent lines deleted)
+		"{a-zA-Z}	: named registers (user define)
+		"_			: black hole register (write to this register to keep other registers (unnamed) unchange)
+		"=			: expression register
+		".			: last inserted
+		"-			: last deleted
+		"/			: last search
+		":			: last command
+		"%			: current file name
+		"#			: last file name
+
+Window
+	Syntax:	Ctrl-W+[size|order]command
+			:['vert'] ['botright'] [size] command [file]
+			Ex: :vert botright 5 sp
+
+	:new | Ctrl-W+n		new horizontal window
+	:vne				new vertical window
+	:sp [file] | Ctrl-W+s			split horizontal
+	:vs [file] | Ctrl-W+v			split vertical
+	Ctrl-W+=						set all windows size equally
+	Ctrl-W++ | Ctrl-W+-				increase|decrease window height by 1|size
+	Ctrl-W+> | Ctrl-W+< 			increase|decrease window width by 1|size
+	:res [height] | Ctrl-W+_		set window height to maximum|height
+	:vert res [width] | Ctrl-W+|	set window width to maximum|width
+	:set scb crb		enable scrolling synchronize
+	:set noscb nocrb	disable scrolling synchronize
+	:set scrollopt=ver,hor,jump		set scrolling synchronize option
+	Ctrl-W+Arrow		move cursor to window by arrow direction
+	Ctrl-W+w			go to next window
+	Ctrl-W+W			go to previous window
+	Ctrl-W+r			move window Down|Right
+	Ctrl-W+R			move window Up|Left
+	Ctrl-W+x			switch to next|order window
+	Ctrl-W+T			move window to new tab
+	Ctrl-W+K			change window to horizontal
+	Ctrl-W+H			change window to vertical
+	Ctrl-W+c			close current window
+	Ctrl-W+o | :only	close all other windows
+
+Tab
+	:tabe [file]		open new empty|file tab
+	:tabn | gt			next tab
+	:tabp | gT			previous tab
+	:tabc				close current tab
+	:tabo				close all other tabs
+	:tab command		open new tab if command create window	Ex: :tab h window
+
+Command
+	:{command}			execute "command"
+	:arrow_up			previous command
+	:arrow_down			next command
+	:set ic				set ignore case sensitive
+	:set noic			set case sensitive
+	:set wrap			turn on word wrap
+	:set nowrap			turn off word wrap
+	:set nu				show line number
+	:set nonu			hide line number
+	:set {option}?		get "option" setting
+	:messages			show all messages
+	:Ctrl-K+{key}		print special key
+	:h | :help [topic]	open help index|topic
+	:set ts=4 sw=0 sts=0	set tab and indentation
+	Ctrl-R+Ctrl-W		get word under cursor
+
+	User Define
+		:command[!] {Name} {command}[|{command2}..]		map|overwrite "command" to "Name" (first letter must be uppercase)	Ex: :command! CopyTop y|0put
+		:command [cmd]		list all|cmd user defined commands
+		:delc {cmd}			delete command "cmd" defined
+		:comc				clear user defined commands
+
+	Note:
+		Commands can set as default in ~/.vimrc file (without ":"). Ex: set ic
+		Using '"' at the start of a line in .vimrc file to write comment.
+
+Scrolling
+	Syntax: [N]command
+
+	zh			scroll to left [N]characters
+	zl			scroll to right [N]characters
+	zH			scroll half screen left
+	zL			scroll half screen right
+	Ctrl-E		scroll down [N]lines
+	Ctrl-Y		scroll up [N]lines
+	Ctrl-D		scroll half screen down
+	Ctrl-U		scroll half screen up
+
+File
+	Syntax: :command [file]
+
+	:e			refresh|open file
+	:enew		new empty file
+	:e #		open previous file
+	:f			get file name
+	Ctrl-G		get full path
+	g+Ctrl-G	get statistics at cursor position
+	:ol			list recent files
+	:bro ol		list and open recent files
+	:Lexplore [dir]		open File Explorer (Netrw)
+	:filter[!] /{pattern}[\c]/ {command}	filter output of "command" by match|unmatch "pattern"
+
+	Substitute
+		# | #0	: latest close
+		#Number	: open order (ASC)
+		%		: current open file
+
+		Note: Using file substitute in command to refer files recently open and close in current session.
+		Ex: :sp #1 | :tabe #
+
+Terminal
+	Syntax:	:['vert'] ['botright'] ter [++option] [command]
+			Ex: :botright ter ++rows=3
+
+	:ter [command]	open terminal|run command
+	Ctrl-D			close
+	Ctrl-W			enter vim command
+	Ctrl-W+N		text selection mode
+	i				back to command mode
+	Ctrl-W+"+"		paste to terminal
+
+	Option
+		++rows=height	: set height
+		++cols=width	: set width
+
+Comparison
+	:diffs		open file to compare
+	:difft		set current window to diff mode
+	:diffp		using patch file to compare
+	:diffo[!]	switch off window|all diff mode
+	:diff[!]	refresh differences from internal|external changed
+	[c			jump to previous
+	]c			jump to next
+	do | :[range]diffg [order|file]		update difference from other side
+	dp | :[range]diffpu [order|file]	update difference to other side
+
+	Note: set diffopt+=vertical to always split window vertical when enter diff mode.
+
+Recording
+	q{a-z}		record operation into register
+	q{A-Z}		append operation into register
+	q			stop recording
+	@{reg}		execute register recorded
+	@@			repeat previous execute
+	:[line]@{reg}	execute register recorded in Ex mode only
+
+	Note:
+		- If using same register as copy conflict may happen.
+		- @@ command run most recent executed macro, include nested run.
+
+Spell Checking
+	:spell		turn on spell checker
+	:nospell	turn off spell checker
+	[s			previous misspelled word
+	]s			next misspelled word
+	z=			suggest word under cursor
+	:spellr		replace all z= word
+	zG | zuG	add|undo good word
+	zW | zuW	add|undo bad word
+
+Date and Time
+	strftime({"format"} [, {time}])		get string from current|time date time
+
+	Format
+		%F		ISO (1997-04-27)
+		%c		local (Sun Apr 27 11:49:23 PM 1997)
+		%a		day (Sun)
+		%A		day (Sunday)
+		%d		date (27)
+		%m		month (04)
+		%b		month (Apr)
+		%B		month (April)
+		%y		year (97)
+		%Y		year (1997)
+		%T		time (11:49:23)
+		%H		24-hour (23)
+		%I		12-hour (11)
+		%M		minute (49)
+		%S		second (23)
+		%p		AM | PM
+		%P		am | pm
+		%z		UTC (+0700)
+		%Z		UTC (+07)
+		%x		local date (04/27/97)
+		%X		local time (11:49:23 PM)
+
+	Note: using expression register ("=) to enter function. Ex: {I}<C-R>+=strftime("%H:%M")
+
+Shortcuts
+	Syntax:	[mode]map[!] {key} {command}
+			[mode]noremap[!] {key} {command}
+
+	:map {key} {command}		map "key" to run "command"		Ex: :map mw :set wrap<CR>
+	:noremap {key} {command}	map "key" to run origin "command" (no mapped command)
+	:unm {key}					remove key mapped
+	:mapc						clear all keys mapped. Warning: This also removes the default-mappings
+	:map [key]					list all|key mapped
+
+	:exe "normal! \<C-{Key}>"	run origin Ctrl-Key command
+
+	MapMode
+		n : Normal (map | nmap)
+		v : Visual (map | vmap | xmap)
+		s : Select (map | vmap | smap)
+		o : Operator-pending (map | omap)
+		i : Insert (map! | imap)
+		c : Command-line (map! | cmap)
+		t : Terminal-Job (tmap)
+		l : Lang-Arg (lmap)
+
+	Operator-pending
+		Activate when press "d", "c", or "y" command in Normal mode.
+
+		Syntax:	:omap {key} {motion}
+				{Normal}[N]command[v|V|Ctrl-V][N]{key_mapped}
+
+		Ex:	omap l i{	(select anything inside {})
+			dl			(delete anything inside {})
+
+		Common Motion
+			b | e		: cursor to start|end of word
+			w			: cursor to next word
+			iw | aw		: current|to next word
+			is | as		: current|to next sentence
+			ip | ap		: current|to next paragraph
+			k  | j		: previous|next line
+			it | at		: inner|outer HTML|XML tag block
+			i{ | a{		: inner|outer {} block
+			i[ | a[		: inner|outer [] block
+			i( | a(		: inner|outer () block
+			i" | a"		: inner|outer "" quote
+			i' | a'		: inner|outer '' quote
+			i` | a`		: inner|outer `` quote
+			i< | a<		: inner|outer <> block
+			gN | gn		: previous|next matched search pattern
+			/string<CR>	: until "string"
+			T{char} | t{char}	: until previous|next "char"
+
+	Special Keys
+		<C-Key>		: Ctrl + Key    Ex: <C-A> = Ctrl-A
+		<A-Key>		: Alt + Key     Ex: <A-A> = Alt-A
+		<S-Key>		: Shift + Key   Ex: <S-A> = Shift-A
+		<Fnum>		: F1..F12       Ex: <F1> = F1
+		<CR>		: Enter
+		<Tab>		: Tab
+		<Esc>		: Escape
+		<Space>		: Space
+		<BS>		: Back Space
+		<Del>		: Delete
+		<Leader>	: \ (default)   Change: let mapleader = "new_key"
+		<Home>		: Home
+		<End>		: End
+		<PageUp>	: Page Up
+		<PageDown>	: Page Down
+		<ScrollWheelUp>			: Scroll Up
+		<ScrollWheelDown>		: Scroll Down
+		<Up|Down|Left|Right>	: Arrow Up|Down|Left|Right
+
+		Note: When running in Termux can using VolUp-Number for F1-F10 (VolUp-0).
+
+Vim Plugin Manager
+	Install: curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+
+	:PlugInstall	install plugins configured in ~/.vimrc
+	:PlugUpdate		install or update plugins
+	:PlugClean		clear unused plugins
+	:PlugStatus		list and check installed plugins
+
+Plugins
+	coc.nvim	Console IDE - https://github.com/neoclide/coc.nvim
+		~/.vimrc config:	Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+		:CocInstall ext_name	install extension
+		:CocUninstall ext_name	uninstall extension
+		:CocUpdate				update extensions
+		:CocList extensions		list extensions and status
+		:CocList snippets		list snippets of current file type
+		:CocCommand snippets.editSnippets			edit snippet for current file type in ~/.config/coc/ultisnips
+		:CocCommand snippets.openSnippetFiles		choose snippet file to open by current file type
+
+		Insert snippet
+			Ctrl-J		jump to next placeholder
+			Ctrl-K		jump to previous placeholder
+
+		Example install extensions for Web Developer, Java, ShellScript, and Markdown:
+			:CocInstall coc-snippets coc-html coc-css coc-tsserver coc-html-css-support coc-cssmodules coc-htmlhint coc-json coc-sql coc-java coc-clangd coc-sh coc-markdownlint
+
+		Hint: Edit file "~/.vim/plugged/coc.nvim/plugin/coc.vim" as follow for pressing Tab|Esc button to accept|cancel code completion:
+			inoremap <silent><expr> <Tab> coc#pum#visible() ? coc#pum#confirm() : "\<C-g>u\<Tab>"
+			inoremap <silent><expr> <C-y> coc#pum#visible() ? coc#pum#cancel() : "\<C-y>"
+
+		Note: Snippets extension can't open popup with multi choice placeholder if first item is unicode font (vietnamese).
+
+Termux
+	Volume key mappings and combination
+
+		VolDown			: Ctrl		Ex: VolDown-L : clear terminal (Ctrl-L)
+		----------------:--------------------------------------------------
+		VolUp-E			: Escape
+		VolUp-T			: Tab
+		VolUp-L			: |
+		VolUp-H			: ~
+		VolUp-Num		: F1..F10 (VolUp-0)
+		VolUp-W|A|S|D	: Arrow Up|Left|Down|Right
+		VolUp-P			: Page Up
+		VolUp-N			: Page Down
+		VolUp-V			: Volume control
+		VolUp-Q			: Toggle extra keys
+
+	Configuration (~/.termux/termux.properties)
+		Special Keys
+			CTRL		INS
+			ALT			DEL
+			FN			BKSP
+			SHIFT		UP|LEFT|RIGHT|DOWN
+			SCROLL		ENTER
+			SPACE		BACKSLASH
+			ESC			QUOTE
+			TAB			APOSTROPHE
+			HOME		F1..F12
+			END			KEYBOARD
+			PGUP		DRAWER
+			PGDN		
+
+	Input Unicode Text
+		To enter unicode text, swipe the extra keys view to the left.
+	
+	Extra Keys Configuration
+		extra-keys = [[{key: 'ESC', popup: '~'},{key: '/', popup: 'BACKSLASH'},{key: 'KEYBOARD', popup: '|'},{key: 'HOME', popup: '{'},{key: 'UP', popup: '^'},{key: 'END', popup: '}'},{key: 'PGUP', popup: '+'}], \
+					  [{key: 'TAB', popup: '`'},{key: 'CTRL', popup: '*'},{key: 'ALT', popup: '&'},{key: 'LEFT', popup: '<'},{key: 'DOWN', popup: '$'},{key: 'RIGHT', popup: '>'},{key: 'PGDN', popup: '-'}]]
+
+
+Configuration Reference (~/.vimrc)
+
+----------------------------------
+"Configured by Thai Nguyen
+"hongthaiktv@gmail.com | fb.com/hongthaiktv
+
+call plug#begin()
+
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+call plug#end()
+
+set encoding=utf-8
+set ignorecase
+set nowrap
+set tabstop=4 shiftwidth=0 softtabstop=0
+set cpoptions+=>
+set scrollopt=ver,hor,jump
+set diffopt+=vertical
+
+execute "set <A-0>=\e0"
+execute "set <A-1>=\e1"
+execute "set <A-2>=\e2"
+execute "set <A-3>=\e3"
+execute "set <A-4>=\e4"
+execute "set <A-5>=\e5"
+execute "set <A-6>=\e6"
+execute "set <A-7>=\e7"
+execute "set <A-8>=\e8"
+execute "set <A-9>=\e9"
+execute "set <A-a>=\ea"
+execute "set <A-A>=\eA"
+execute "set <A-c>=\ec"
+execute "set <A-C>=\eC"
+execute "set <A-d>=\ed"
+execute "set <A-D>=\eD"
+execute "set <A-i>=\ei"
+execute "set <A-I>=\eI"
+execute "set <A-o>=\eo"
+execute "set <A-O>=\eO"
+execute "set <A-s>=\es"
+execute "set <A-S>=\eS"
+execute "set <A-t>=\et"
+execute "set <A-T>=\eT"
+execute "set <A-v>=\ev"
+execute "set <A-V>=\eV"
+execute "set <A-,>=\e,"
+execute "set <A-.>=\e."
+
+noremap <Del> "_x
+nnoremap x "_x
+nnoremap s "_s
+nnoremap d "_d
+nnoremap c vy
+nnoremap cc vP
+nnoremap cd "0dd
+nnoremap cm "0d
+nnoremap A v^"_d
+nnoremap D "_D
+xnoremap x "0d
+xnoremap s "_s
+xnoremap d "_d
+xnoremap c "_c
+
+nnoremap gq g<C-H>
+xnoremap gu g<C-X>
+xnoremap gi g<C-A>
+
+nmap mw :set wrap<CR>
+nmap mmw :set nowrap<CR>
+nmap mi :set noic<CR>
+nmap mmi :set ic<CR>
+nmap ml :set nu<CR>
+nmap mml :set nonu<CR>
+nmap mb :set scb crb<CR><C-W>w:set scb crb<CR><C-W>W
+nmap mmb :set noscb nocrb<CR>
+nmap mm0 :tags<CR>
+nmap mn :tag<CR>
+nmap mk :pop<CR>
+nmap mm :0tag<CR>
+nmap b <C-]>
+nmap mg g<C-G>
+nmap mh :tab h <Up>
+nmap mmh :tab h <C-R><C-W><CR>
+xnoremap cd yP<Right>i<Space><Esc>gv<Right>ygv<Esc>
+xnoremap ccd yP
+xnoremap cs :s/^/# /<CR>
+xnoremap ccs :s/^# //<CR>
+xnoremap cv :s/^/" /<CR>
+xnoremap ccv :s/^" //<CR>
+xnoremap cl :s/^/-- /<CR>
+xnoremap ccl :s/^-- //<CR>
+xnoremap cj :s/^/\/\/ /<CR>
+xnoremap ccj :s/^\/\/ //<CR>
+xnoremap cb :<BS><BS><BS>s/^/\/\* /<CR>gv:<BS><BS><BS><BS>>s/^/\*\/ /<CR>
+xnoremap ccb :<BS><BS><BS>s/^\/\* //<CR>gv:<BS><BS><BS><BS>>s/^\*\/ //<CR>
+xnoremap ch :<BS><BS><BS>s/^/<\!-- /<CR>gv:<BS><BS><BS><BS>>s/^/--> /<CR>
+xnoremap cch :<BS><BS><BS>s/^<\!-- //<CR>gv:<BS><BS><BS><BS>>s/^--> //<CR>
+xnoremap cp :<BS><BS><BS>s/^/""" /<CR>gv:<BS><BS><BS><BS>>s/^/""" /<CR>
+xnoremap ccp :<BS><BS><BS>s/^""" //<CR>gv:<BS><BS><BS><BS>>s/^""" //<CR>
+xnoremap ci <Esc>i<Right>*/<Esc>gv"_yi/*<Esc>
+xnoremap cci :<BS><BS><BS>s/\/\*//<CR>gv:<BS><BS><BS><BS>>s/\*\///<CR>
+nmap cs gvccs
+nmap cv gvccv
+nmap cl gvccl
+nmap cj gvccj
+nmap cb gvccb
+nmap ch gvcch
+nmap cp gvccp
+nmap ci gvcci
+
+nmap mx :set spell<CR>
+nmap mmx :set nospell<CR>
+nmap mmm z=
+nmap m, [s
+nmap m. ]s
+
+nmap md :nmap , [c<CR>:nmap . ]c<CR>:difft<CR><C-W>w:difft<CR><C-W>W
+nmap mmd :nmap , g;<CR>:nmap . g,<CR>:diffo!<CR>
+nmap du :diff!<CR>
+
+nmap , g;
+nmap . g,
+imap <A-,> <C-O>g;
+imap <A-.> <C-O>g,
+nmap mj :changes<CR>
+
+nmap <C-S> :w<CR>
+imap <C-S> <C-O>:w<CR>
+xmap <C-S> :sort<CR>
+smap <C-S> <C-G>:sort<CR>
+nmap ms :wa<CR>
+nmap mms :xa<CR>
+nmap mc :x<CR>
+nmap qq :q<CR>
+nmap qa :qa<CR>
+nmap mq :q!<CR>
+nmap mmq :qa!<CR>
+nnoremap <A-End> $
+nnoremap <A-Home> ^
+inoremap <A-End> <End><Left>
+inoremap <A-Home> <C-O>^
+xnoremap <A-End> <End><Left>
+xnoremap <A-Home> ^
+snoremap <A-End> <C-G><End><Left><C-G>
+snoremap <A-Home> <C-G>^<C-G>
+cnoremap <A-v> <C-v>
+
+xnoremap ql <Esc>i<Right>)<Esc>gv"_yi(<Esc>va("_y
+nnoremap ql va(<Esc>"_xgv"_y"_x
+xnoremap qk <Esc>i<Right>}<Esc>gv"_yi{<Esc>va{"_y
+nnoremap qk va{<Esc>"_xgv"_y"_x
+xnoremap qj <Esc>i<Right>]<Esc>gv"_yi[<Esc>va["_y
+nnoremap qj va[<Esc>"_xgv"_y"_x
+xnoremap qt <Esc>i<Right>><Esc>gv"_yi<<Esc>va<"_y
+nnoremap qt va<<Esc>"_xgv"_y"_x
+xnoremap qrt <Esc>f>"_xgv"_yF<"_x
+xnoremap qz <Esc>i<Right>`<Esc>gv"_yi`<Esc>gvf`"_y
+nnoremap qz f`"_xF`"_x
+xnoremap qrz <Esc>f`"_xgv"_yF`"_x
+xnoremap qx <Esc>i<Right>"<Esc>gv"_yi"<Esc>gvf""_y
+nnoremap qx f""_xF""_x
+xnoremap qrx <Esc>f""_xgv"_yF""_x
+xnoremap qc <Esc>i<Right>'<Esc>gv"_yi'<Esc>gvf'"_y
+nnoremap qc f'"_xF'"_x
+xnoremap qrc <Esc>f'"_xgv"_yF'"_x
+xnoremap qs <Esc>i<Right>*<Esc>gv"_yi*<Esc>gvf*"_y
+nnoremap qs f*"_xF*"_x
+xnoremap qrs <Esc>f*"_xgv"_yF*"_x
+
+xnoremap <Space>ql <Esc>i<Right> )<Esc>gv"_yi( <Esc>va("_y
+nnoremap <Space>ql va(<Esc>i<BS><Del><Esc>gv"_y"_x"_x
+xnoremap <Space>qk <Esc>i<Right> }<Esc>gv"_yi{ <Esc>va{"_y
+nnoremap <Space>qk va{<Esc>i<BS><Del><Esc>gv"_y"_x"_x
+xnoremap <Space>qj <Esc>i<Right> ]<Esc>gv"_yi[ <Esc>va["_y
+nnoremap <Space>qj va[<Esc>i<BS><Del><Esc>gv"_y"_x"_x
+
+nmap <C-A> ggVG
+imap <C-A> <C-O>gg<C-O>VG
+nmap <C-B> :%d _<CR>
+imap <C-B> <C-O>:%d _<CR>
+nnoremap <C-C> "myy
+xmap <C-C> "my
+smap <C-C> <C-G>"my
+imap <C-C> <C-O>v"my
+nmap <C-V> "mP
+xmap <C-V> "mP
+smap <C-V> <C-G>"mPi
+noremap! <C-V> <C-R>m
+tmap <C-V> <C-W>"m
+nmap <C-F> :%s///g<Left><Left><Left>
+imap <C-F> <C-O>/<Up>
+xmap <C-F> :<BS><BS><BS><BS><BS>let @v = @"<CR>gv"by/<C-R>b<CR>:let @" = @v<CR>
+smap <C-F> <C-G><C-F>
+nmap <C-H> :sort<CR>
+imap <C-H> <C-O>:sort<CR>
+xmap <C-H> <Esc>:let @v = @"<CR>gv"by:let @" = @v<CR>:%s///g<Left><Left><Left><C-R>b<End><Left><Left>
+xmap <C-R> :s///g<Left><Left><Left>
+xnoremap <C-X> "md
+snoremap <C-X> <C-G>"mdi
+nmap <C-X> :d m<CR>
+imap <C-X> <C-O>:d m<CR>
+nmap <C-K> :m.-2<CR>
+nmap <C-J> :m.+1<CR>
+imap <C-K> <C-O>:m.-2<CR>
+imap <C-J> <C-O>:m.+1<CR>
+nnoremap <C-I> <C-A>
+nnoremap <C-U> <C-X>
+vnoremap <C-I> <C-A>
+vnoremap <C-U> <C-X>
+nnoremap q :messages<CR>
+xnoremap q <Esc>
+nnoremap a A
+xnoremap p P
+nnoremap r <C-R>
+nnoremap <C-R> :source ~/.vimrc<CR>
+nmap k N
+nmap yY :y m<CR>
+nmap Y :y M<CR>
+xnoremap <BS> "_x
+snoremap <BS> <C-G>"_xi
+nnoremap <C-Z> u
+inoremap <C-Z> <C-O>u
+xnoremap <C-Z> <Esc>ugv
+snoremap <C-Z> <Esc>ugv<C-G>
+imap <C-L>z <C-O><C-R>
+nmap <C-D> :copy.<CR>
+imap <C-D> <C-O>:copy.<CR>
+xmap <C-D> :copy'><CR>
+smap <C-D> <C-G>:copy'><CR>
+
+nnoremap <A-a><Up> :copy0<CR>
+nnoremap <A-a><Down> :copy$<CR>
+nnoremap <A-a><Left> :let @v = @"<CR>^y$I<C-R>" <Esc>^:let @" = @v<CR>
+nnoremap <A-a><Right> :let @v = @"<CR>^y$A <C-R>"<Esc>:let @" = @v<CR>
+
+nnoremap <A-c><Up> :1,y m<CR>
+nnoremap <A-c><Down> :.,$y m<CR>
+nnoremap <A-c><Left> v^"my
+nnoremap <A-c><Right> "my$
+imap <A-c><Up> <C-O><A-c><Up>
+imap <A-c><Down> <C-O><A-c><Down>
+imap <A-c><Left> <C-O><A-c><Left>
+imap <A-c><Right> <C-O><A-c><Right>
+nnoremap <A-c>a :%y m<CR>
+imap <A-c>a <C-O><A-c>a
+nmap <A-c>z "myi`
+imap <A-c>z <C-O>"myi`
+nmap <A-C>Z "mya`
+imap <A-C>Z <C-O>"mya`
+nmap <A-c>x "myi"
+imap <A-c>x <C-O>"myi"
+nmap <A-C>X "mya"
+imap <A-C>X <C-O>"mya"
+nmap <A-c>c "myi'
+imap <A-c>c <C-O>"myi'
+nmap <A-C>C "mya'
+imap <A-C>C <C-O>"mya'
+nmap <A-c>u "myi<
+imap <A-c>u <C-O>"myi<
+nmap <A-C>U "mya<
+imap <A-C>U <C-O>"mya<
+nmap <A-c>j "myi[
+imap <A-c>j <C-O>"myi[
+nmap <A-C>J "mya[
+imap <A-C>J <C-O>"mya[
+nmap <A-c>k "myi{
+imap <A-c>k <C-O>"myi{
+nmap <A-C>K "mya{
+imap <A-C>K <C-O>"mya{
+nmap <A-c>l "myi(
+imap <A-c>l <C-O>"myi(
+nmap <A-C>L "mya(
+imap <A-C>L <C-O>"mya(
+nmap <A-c>t "myit
+imap <A-c>t <C-O>"myit
+nmap <A-C>T "myat
+imap <A-C>T <C-O>"myat
+nmap <A-c><CR> "myip
+imap <A-c><CR> <C-O>"myip
+nnoremap <A-c><Space> T vt "my
+inoremap <A-c><Space> <C-O>T <C-O>vt "my
+
+xnoremap <Space> ;
+nnoremap <Space><Up> t vT ;;;;;;;;;;;;;;;;;;;;
+nnoremap <Space><Down> T vt ;;;;;;;;;;;;;;;;;;;;
+nmap <Space><Space><Up> <Space>"Cy
+nmap <Space><Space><Down> <Space>"cy
+nnoremap <Space>g Ffvfe"_strue<Esc>
+nnoremap <Space>f Ftvfe"_sfalse<Esc>
+nnoremap <Space>s T vt "_x"_x
+nnoremap <Space>d T vt yP<Right>i<Space><Esc>gv<Right>ygv<Esc>
+nmap <Space><Esc>OH jajtsjtd
+nnoremap <Space><Esc>OF :qa<CR>
+
+nnoremap <Space> T vt 
+nnoremap <Space><Space><Space> T vt ;
+nmap <Space>v <Space>"mPgv"_y
+nmap <Space>11 <Space><A-1>gv"_y
+nmap <Space>22 <Space><A-2>gv"_y
+nmap <Space>33 <Space><A-3>gv"_y
+nmap <Space>44 <Space><A-4>gv"_y
+nmap <Space>55 <Space><A-5>gv"_y
+nmap <Space>66 <Space><A-6>gv"_y
+nmap <Space>77 <Space><A-7>gv"_y
+nmap <Space>88 <Space><A-8>gv"_y
+nmap <Space>99 <Space><A-9>gv"_y
+nmap <Space>0 <Space><A-0>gv"_y
+
+nnoremap <Space>v<Up> o<C-R>c<Esc>^
+nnoremap <Space>vp o<C-R>"<Esc>^
+nnoremap <Space>vv o<C-R>m<Esc>^
+nmap <Space>v1 o<A-1><Esc>^
+nmap <Space>v2 o<A-2><Esc>^
+nmap <Space>v3 o<A-3><Esc>^
+nmap <Space>v4 o<A-4><Esc>^
+nmap <Space>v5 o<A-5><Esc>^
+nmap <Space>v6 o<A-6><Esc>^
+nmap <Space>v7 o<A-7><Esc>^
+nmap <Space>v8 o<A-8><Esc>^
+nmap <Space>v9 o<A-9><Esc>^
+nmap <Space>v0 o<A-0><Esc>^
+
+nnoremap <Space><Left> ^vt 
+nmap <Space><Left><Left> <Space><Left>"mPgv"_y
+nmap <Space><Left>1 <Space><Left><A-1>gv"_y
+nmap <Space><Left>2 <Space><Left><A-2>gv"_y
+nmap <Space><Left>3 <Space><Left><A-3>gv"_y
+nmap <Space><Left>4 <Space><Left><A-4>gv"_y
+nmap <Space><Left>5 <Space><Left><A-5>gv"_y
+nmap <Space><Left>6 <Space><Left><A-6>gv"_y
+nmap <Space><Left>7 <Space><Left><A-7>gv"_y
+nmap <Space><Left>8 <Space><Left><A-8>gv"_y
+nmap <Space><Left>9 <Space><Left><A-9>gv"_y
+nmap <Space><Left>0 <Space><Left><A-0>gv"_y
+
+nnoremap <Space><Right> $vT 
+nmap <Space><Right><Right> <Space><Right>"mPgv"_y
+nmap <Space><Right>1 <Space><Right><A-1>gv"_y
+nmap <Space><Right>2 <Space><Right><A-2>gv"_y
+nmap <Space><Right>3 <Space><Right><A-3>gv"_y
+nmap <Space><Right>4 <Space><Right><A-4>gv"_y
+nmap <Space><Right>5 <Space><Right><A-5>gv"_y
+nmap <Space><Right>6 <Space><Right><A-6>gv"_y
+nmap <Space><Right>7 <Space><Right><A-7>gv"_y
+nmap <Space><Right>8 <Space><Right><A-8>gv"_y
+nmap <Space><Right>9 <Space><Right><A-9>gv"_y
+nmap <Space><Right>0 <Space><Right><A-0>gv"_y
+
+nnoremap <Space>. vt;
+nmap <Space>.. <Space>."mPgv"_y
+nmap <Space>.1 <Space>.<A-1>gv"_y
+nmap <Space>.2 <Space>.<A-2>gv"_y
+nmap <Space>.3 <Space>.<A-3>gv"_y
+nmap <Space>.4 <Space>.<A-4>gv"_y
+nmap <Space>.5 <Space>.<A-5>gv"_y
+nmap <Space>.6 <Space>.<A-6>gv"_y
+nmap <Space>.7 <Space>.<A-7>gv"_y
+nmap <Space>.8 <Space>.<A-8>gv"_y
+nmap <Space>.9 <Space>.<A-9>gv"_y
+nmap <Space>.0 <Space>.<A-0>gv"_y
+
+nnoremap <Space>, vt,
+nmap <Space>,, <Space>,"mPgv"_y
+nmap <Space>,1 <Space>,<A-1>gv"_y
+nmap <Space>,2 <Space>,<A-2>gv"_y
+nmap <Space>,3 <Space>,<A-3>gv"_y
+nmap <Space>,4 <Space>,<A-4>gv"_y
+nmap <Space>,5 <Space>,<A-5>gv"_y
+nmap <Space>,6 <Space>,<A-6>gv"_y
+nmap <Space>,7 <Space>,<A-7>gv"_y
+nmap <Space>,8 <Space>,<A-8>gv"_y
+nmap <Space>,9 <Space>,<A-9>gv"_y
+nmap <Space>,0 <Space>,<A-0>gv"_y
+
+nnoremap <Space><CR> vip
+nmap <Space><CR><CR> <Space><CR>"mP
+nmap <Space><CR>1 <Space><CR><A-1>
+nmap <Space><CR>2 <Space><CR><A-2>
+nmap <Space><CR>3 <Space><CR><A-3>
+nmap <Space><CR>4 <Space><CR><A-4>
+nmap <Space><CR>5 <Space><CR><A-5>
+nmap <Space><CR>6 <Space><CR><A-6>
+nmap <Space><CR>7 <Space><CR><A-7>
+nmap <Space><CR>8 <Space><CR><A-8>
+nmap <Space><CR>9 <Space><CR><A-9>
+nmap <Space><CR>0 <Space><CR><A-0>
+
+nnoremap <Space>z vi`
+nmap <Space>zz <Space>z"mPgv"_y
+nmap <Space>z1 <Space>z<A-1>gv"_y
+nmap <Space>z2 <Space>z<A-2>gv"_y
+nmap <Space>z3 <Space>z<A-3>gv"_y
+nmap <Space>z4 <Space>z<A-4>gv"_y
+nmap <Space>z5 <Space>z<A-5>gv"_y
+nmap <Space>z6 <Space>z<A-6>gv"_y
+nmap <Space>z7 <Space>z<A-7>gv"_y
+nmap <Space>z8 <Space>z<A-8>gv"_y
+nmap <Space>z9 <Space>z<A-9>gv"_y
+nmap <Space>z0 <Space>z<A-0>gv"_y
+
+nnoremap <Space>Z F`vf`
+nnoremap ZZ F`vf`
+nmap <Space>ZZ <Space>Z"mPgv"_y
+nmap <Space>Z1 <Space>Z<A-1>gv"_y
+nmap <Space>Z2 <Space>Z<A-2>gv"_y
+nmap <Space>Z3 <Space>Z<A-3>gv"_y
+nmap <Space>Z4 <Space>Z<A-4>gv"_y
+nmap <Space>Z5 <Space>Z<A-5>gv"_y
+nmap <Space>Z6 <Space>Z<A-6>gv"_y
+nmap <Space>Z7 <Space>Z<A-7>gv"_y
+nmap <Space>Z8 <Space>Z<A-8>gv"_y
+nmap <Space>Z9 <Space>Z<A-9>gv"_y
+nmap <Space>Z0 <Space>Z<A-0>gv"_y
+
+nnoremap <Space>x vi"
+nmap <Space>xx <Space>x"mPgv"_y
+nmap <Space>x1 <Space>x<A-1>gv"_y
+nmap <Space>x2 <Space>x<A-2>gv"_y
+nmap <Space>x3 <Space>x<A-3>gv"_y
+nmap <Space>x4 <Space>x<A-4>gv"_y
+nmap <Space>x5 <Space>x<A-5>gv"_y
+nmap <Space>x6 <Space>x<A-6>gv"_y
+nmap <Space>x7 <Space>x<A-7>gv"_y
+nmap <Space>x8 <Space>x<A-8>gv"_y
+nmap <Space>x9 <Space>x<A-9>gv"_y
+nmap <Space>x0 <Space>x<A-0>gv"_y
+
+nnoremap <Space>X F"vf"
+nnoremap XX F"vf"
+nmap <Space>XX <Space>X"mPgv"_y
+nmap <Space>X1 <Space>X<A-1>gv"_y
+nmap <Space>X2 <Space>X<A-2>gv"_y
+nmap <Space>X3 <Space>X<A-3>gv"_y
+nmap <Space>X4 <Space>X<A-4>gv"_y
+nmap <Space>X5 <Space>X<A-5>gv"_y
+nmap <Space>X6 <Space>X<A-6>gv"_y
+nmap <Space>X7 <Space>X<A-7>gv"_y
+nmap <Space>X8 <Space>X<A-8>gv"_y
+nmap <Space>X9 <Space>X<A-9>gv"_y
+nmap <Space>X0 <Space>X<A-0>gv"_y
+
+nnoremap <Space>c vi'
+nmap <Space>cc <Space>c"mPgv"_y
+nmap <Space>c1 <Space>c<A-1>gv"_y
+nmap <Space>c2 <Space>c<A-2>gv"_y
+nmap <Space>c3 <Space>c<A-3>gv"_y
+nmap <Space>c4 <Space>c<A-4>gv"_y
+nmap <Space>c5 <Space>c<A-5>gv"_y
+nmap <Space>c6 <Space>c<A-6>gv"_y
+nmap <Space>c7 <Space>c<A-7>gv"_y
+nmap <Space>c8 <Space>c<A-8>gv"_y
+nmap <Space>c9 <Space>c<A-9>gv"_y
+nmap <Space>c0 <Space>c<A-0>gv"_y
+
+nnoremap <Space>C F'vf'
+nnoremap CC F'vf'
+nmap <Space>CC <Space>C"mPgv"_y
+nmap <Space>C1 <Space>C<A-1>gv"_y
+nmap <Space>C2 <Space>C<A-2>gv"_y
+nmap <Space>C3 <Space>C<A-3>gv"_y
+nmap <Space>C4 <Space>C<A-4>gv"_y
+nmap <Space>C5 <Space>C<A-5>gv"_y
+nmap <Space>C6 <Space>C<A-6>gv"_y
+nmap <Space>C7 <Space>C<A-7>gv"_y
+nmap <Space>C8 <Space>C<A-8>gv"_y
+nmap <Space>C9 <Space>C<A-9>gv"_y
+nmap <Space>C0 <Space>C<A-0>gv"_y
+
+nnoremap <Space>l vi(
+nmap <Space>ll <Space>l"mPgv"_y
+nmap <Space>l1 <Space>l<A-1>gv"_y
+nmap <Space>l2 <Space>l<A-2>gv"_y
+nmap <Space>l3 <Space>l<A-3>gv"_y
+nmap <Space>l4 <Space>l<A-4>gv"_y
+nmap <Space>l5 <Space>l<A-5>gv"_y
+nmap <Space>l6 <Space>l<A-6>gv"_y
+nmap <Space>l7 <Space>l<A-7>gv"_y
+nmap <Space>l8 <Space>l<A-8>gv"_y
+nmap <Space>l9 <Space>l<A-9>gv"_y
+nmap <Space>l0 <Space>l<A-0>gv"_y
+
+nnoremap <Space>L va(
+nmap <Space>LL <Space>L"mPgv"_y
+nmap <Space>L1 <Space>L<A-1>gv"_y
+nmap <Space>L2 <Space>L<A-2>gv"_y
+nmap <Space>L3 <Space>L<A-3>gv"_y
+nmap <Space>L4 <Space>L<A-4>gv"_y
+nmap <Space>L5 <Space>L<A-5>gv"_y
+nmap <Space>L6 <Space>L<A-6>gv"_y
+nmap <Space>L7 <Space>L<A-7>gv"_y
+nmap <Space>L8 <Space>L<A-8>gv"_y
+nmap <Space>L9 <Space>L<A-9>gv"_y
+nmap <Space>L0 <Space>L<A-0>gv"_y
+
+nnoremap <Space>k vi{
+nmap <Space>kk <Space>k"mPgv"_y
+nmap <Space>k1 <Space>k<A-1>gv"_y
+nmap <Space>k2 <Space>k<A-2>gv"_y
+nmap <Space>k3 <Space>k<A-3>gv"_y
+nmap <Space>k4 <Space>k<A-4>gv"_y
+nmap <Space>k5 <Space>k<A-5>gv"_y
+nmap <Space>k6 <Space>k<A-6>gv"_y
+nmap <Space>k7 <Space>k<A-7>gv"_y
+nmap <Space>k8 <Space>k<A-8>gv"_y
+nmap <Space>k9 <Space>k<A-9>gv"_y
+nmap <Space>k0 <Space>k<A-0>gv"_y
+
+nnoremap <Space>K va{
+nmap <Space>KK <Space>K"mPgv"_y
+nmap <Space>K1 <Space>K<A-1>gv"_y
+nmap <Space>K2 <Space>K<A-2>gv"_y
+nmap <Space>K3 <Space>K<A-3>gv"_y
+nmap <Space>K4 <Space>K<A-4>gv"_y
+nmap <Space>K5 <Space>K<A-5>gv"_y
+nmap <Space>K6 <Space>K<A-6>gv"_y
+nmap <Space>K7 <Space>K<A-7>gv"_y
+nmap <Space>K8 <Space>K<A-8>gv"_y
+nmap <Space>K9 <Space>K<A-9>gv"_y
+nmap <Space>K0 <Space>K<A-0>gv"_y
+
+nnoremap <Space>j vi[
+nmap <Space>jj <Space>j"mPgv"_y
+nmap <Space>j1 <Space>j<A-1>gv"_y
+nmap <Space>j2 <Space>j<A-2>gv"_y
+nmap <Space>j3 <Space>j<A-3>gv"_y
+nmap <Space>j4 <Space>j<A-4>gv"_y
+nmap <Space>j5 <Space>j<A-5>gv"_y
+nmap <Space>j6 <Space>j<A-6>gv"_y
+nmap <Space>j7 <Space>j<A-7>gv"_y
+nmap <Space>j8 <Space>j<A-8>gv"_y
+nmap <Space>j9 <Space>j<A-9>gv"_y
+nmap <Space>j0 <Space>j<A-0>gv"_y
+
+nnoremap <Space>J va[
+nmap <Space>JJ <Space>J"mPgv"_y
+nmap <Space>J1 <Space>J<A-1>gv"_y
+nmap <Space>J2 <Space>J<A-2>gv"_y
+nmap <Space>J3 <Space>J<A-3>gv"_y
+nmap <Space>J4 <Space>J<A-4>gv"_y
+nmap <Space>J5 <Space>J<A-5>gv"_y
+nmap <Space>J6 <Space>J<A-6>gv"_y
+nmap <Space>J7 <Space>J<A-7>gv"_y
+nmap <Space>J8 <Space>J<A-8>gv"_y
+nmap <Space>J9 <Space>J<A-9>gv"_y
+nmap <Space>J0 <Space>J<A-0>gv"_y
+
+nnoremap <Space>u vi<
+nmap <Space>uu <Space>u"mPgv"_y
+nmap <Space>u1 <Space>u<A-1>gv"_y
+nmap <Space>u2 <Space>u<A-2>gv"_y
+nmap <Space>u3 <Space>u<A-3>gv"_y
+nmap <Space>u4 <Space>u<A-4>gv"_y
+nmap <Space>u5 <Space>u<A-5>gv"_y
+nmap <Space>u6 <Space>u<A-6>gv"_y
+nmap <Space>u7 <Space>u<A-7>gv"_y
+nmap <Space>u8 <Space>u<A-8>gv"_y
+nmap <Space>u9 <Space>u<A-9>gv"_y
+nmap <Space>u0 <Space>u<A-0>gv"_y
+
+nnoremap <Space>U va<
+nmap <Space>UU <Space>U"mPgv"_y
+nmap <Space>U1 <Space>U<A-1>gv"_y
+nmap <Space>U2 <Space>U<A-2>gv"_y
+nmap <Space>U3 <Space>U<A-3>gv"_y
+nmap <Space>U4 <Space>U<A-4>gv"_y
+nmap <Space>U5 <Space>U<A-5>gv"_y
+nmap <Space>U6 <Space>U<A-6>gv"_y
+nmap <Space>U7 <Space>U<A-7>gv"_y
+nmap <Space>U8 <Space>U<A-8>gv"_y
+nmap <Space>U9 <Space>U<A-9>gv"_y
+nmap <Space>U0 <Space>U<A-0>gv"_y
+
+nnoremap <Space>t vit
+nmap <Space>tt <Space>t"mPgv"_y
+nmap <Space>t1 <Space>t<A-1>gv"_y
+nmap <Space>t2 <Space>t<A-2>gv"_y
+nmap <Space>t3 <Space>t<A-3>gv"_y
+nmap <Space>t4 <Space>t<A-4>gv"_y
+nmap <Space>t5 <Space>t<A-5>gv"_y
+nmap <Space>t6 <Space>t<A-6>gv"_y
+nmap <Space>t7 <Space>t<A-7>gv"_y
+nmap <Space>t8 <Space>t<A-8>gv"_y
+nmap <Space>t9 <Space>t<A-9>gv"_y
+nmap <Space>t0 <Space>t<A-0>gv"_y
+
+nnoremap <Space>T vat
+nmap <Space>TT <Space>T"mPgv"_y
+nmap <Space>T1 <Space>T<A-1>gv"_y
+nmap <Space>T2 <Space>T<A-2>gv"_y
+nmap <Space>T3 <Space>T<A-3>gv"_y
+nmap <Space>T4 <Space>T<A-4>gv"_y
+nmap <Space>T5 <Space>T<A-5>gv"_y
+nmap <Space>T6 <Space>T<A-6>gv"_y
+nmap <Space>T7 <Space>T<A-7>gv"_y
+nmap <Space>T8 <Space>T<A-8>gv"_y
+nmap <Space>T9 <Space>T<A-9>gv"_y
+nmap <Space>T0 <Space>T<A-0>gv"_y
+
+nnoremap <Space>tu vat"_yvi<
+nnoremap <Space>ti vat<Esc>vi<
+nnoremap <Space>TU vat"_yva<
+nnoremap <Space>TI vat<Esc>va<
+
+nnoremap <Space>i vat<Esc>"_di<i/<C-R>"<Esc>gv"_y"_di<""P
+nnoremap <Space>ip vat<Esc>"_di<i/<C-R>"<Esc>gv"_y"_di<""P
+nnoremap <Space>ii vat<Esc>"_di<i/<C-R>m<Esc>gv"_y"_di<"mP
+nnoremap <Space>i1 vat<Esc>"_di<i/<C-R>q<Esc>gv"_y"_di<"qP
+nnoremap <Space>i2 vat<Esc>"_di<i/<C-R>w<Esc>gv"_y"_di<"wP
+nnoremap <Space>i3 vat<Esc>"_di<i/<C-R>e<Esc>gv"_y"_di<"eP
+nnoremap <Space>i4 vat<Esc>"_di<i/<C-R>r<Esc>gv"_y"_di<"rP
+nnoremap <Space>i5 vat<Esc>"_di<i/<C-R>t<Esc>gv"_y"_di<"tP
+nnoremap <Space>i6 vat<Esc>"_di<i/<C-R>y<Esc>gv"_y"_di<"yP
+nnoremap <Space>i7 vat<Esc>"_di<i/<C-R>u<Esc>gv"_y"_di<"uP
+nnoremap <Space>i8 vat<Esc>"_di<i/<C-R>i<Esc>gv"_y"_di<"iP
+nnoremap <Space>i9 vat<Esc>"_di<i/<C-R>o<Esc>gv"_y"_di<"oP
+nnoremap <Space>i0 vat<Esc>"_di<i/<C-R>0<Esc>gv"_y"_di<"0P
+
+nnoremap <Space>a ^v$<Left>
+nmap <Space>aa <Space>a"mPgv"_y
+nmap <Space>a1 <Space>a<A-1>gv"_y
+nmap <Space>a2 <Space>a<A-2>gv"_y
+nmap <Space>a3 <Space>a<A-3>gv"_y
+nmap <Space>a4 <Space>a<A-4>gv"_y
+nmap <Space>a5 <Space>a<A-5>gv"_y
+nmap <Space>a6 <Space>a<A-6>gv"_y
+nmap <Space>a7 <Space>a<A-7>gv"_y
+nmap <Space>a8 <Space>a<A-8>gv"_y
+nmap <Space>a9 <Space>a<A-9>gv"_y
+nmap <Space>a0 <Space>a<A-0>gv"_y
+
+nmap <Space><Space> <Space>"my
+nmap <Space><Space><Left> <Space><Left>"my
+nmap <Space><Space><Right> <Space><Right>"my
+nmap <Space><Space>. <Space>."my
+nmap <Space><Space>, <Space>,"my
+nmap <Space><Space><CR> <Space><CR>"my
+nmap <Space><Space>a <Space>a"my
+nmap <Space><Space>z <Space>z"my
+nmap <Space><Space>Z <Space>Z"my
+nmap <Space><Space>x <Space>x"my
+nmap <Space><Space>X <Space>X"my
+nmap <Space><Space>c <Space>c"my
+nmap <Space><Space>C <Space>C"my
+nmap <Space><Space>l <Space>l"my
+nmap <Space><Space>L <Space>L"my
+nmap <Space><Space>k <Space>k"my
+nmap <Space><Space>K <Space>K"my
+nmap <Space><Space>j <Space>j"my
+nmap <Space><Space>J <Space>J"my
+nmap <Space><Space>t <Space>t"my
+nmap <Space><Space>T <Space>T"my
+nmap <Space><Space>u <Space>u"my
+nmap <Space><Space>U <Space>U"my
+nmap <Space><Space>i <Space>tu"my
+nmap <Space><Space>I <Space>TU"my
+
+nmap <Space>1 <Space><A-c>1
+nmap <Space>1<Left> <Space><Left><A-c>1
+nmap <Space>1<Right> <Space><Right><A-c>1
+nmap <Space>1. <Space>.<A-c>1
+nmap <Space>1, <Space>,<A-c>1
+nmap <Space>1<CR> <Space><CR><A-c>1
+nmap <Space>1a <Space>a<A-c>1
+nmap <Space>1z <Space>z<A-c>1
+nmap <Space>1x <Space>x<A-c>1
+nmap <Space>1c <Space>c<A-c>1
+nmap <Space>1l <Space>l<A-c>1
+nmap <Space>1k <Space>k<A-c>1
+nmap <Space>1j <Space>j<A-c>1
+nmap <Space>1t <Space>t<A-c>1
+nmap <Space>1u <Space>u<A-c>1
+nmap <Space>1i <Space>tu<A-c>1
+nmap <Space>1Z <Space>Z<A-c>1
+nmap <Space>1X <Space>X<A-c>1
+nmap <Space>1C <Space>C<A-c>1
+nmap <Space>1L <Space>L<A-c>1
+nmap <Space>1K <Space>K<A-c>1
+nmap <Space>1J <Space>J<A-c>1
+nmap <Space>1T <Space>T<A-c>1
+nmap <Space>1U <Space>U<A-c>1
+nmap <Space>1I <Space>TU<A-c>1
+
+nmap <Space>2 <Space><A-c>2
+nmap <Space>2<Left> <Space><Left><A-c>2
+nmap <Space>2<Right> <Space><Right><A-c>2
+nmap <Space>2. <Space>.<A-c>2
+nmap <Space>2, <Space>,<A-c>2
+nmap <Space>2<CR> <Space><CR><A-c>2
+nmap <Space>2a <Space>a<A-c>2
+nmap <Space>2z <Space>z<A-c>2
+nmap <Space>2x <Space>x<A-c>2
+nmap <Space>2c <Space>c<A-c>2
+nmap <Space>2l <Space>l<A-c>2
+nmap <Space>2k <Space>k<A-c>2
+nmap <Space>2j <Space>j<A-c>2
+nmap <Space>2t <Space>t<A-c>2
+nmap <Space>2u <Space>u<A-c>2
+nmap <Space>2i <Space>tu<A-c>2
+nmap <Space>2Z <Space>Z<A-c>2
+nmap <Space>2X <Space>X<A-c>2
+nmap <Space>2C <Space>C<A-c>2
+nmap <Space>2L <Space>L<A-c>2
+nmap <Space>2K <Space>K<A-c>2
+nmap <Space>2J <Space>J<A-c>2
+nmap <Space>2T <Space>T<A-c>2
+nmap <Space>2U <Space>U<A-c>2
+nmap <Space>2I <Space>TU<A-c>2
+
+nmap <Space>3 <Space><A-c>3
+nmap <Space>3<Left> <Space><Left><A-c>3
+nmap <Space>3<Right> <Space><Right><A-c>3
+nmap <Space>3. <Space>.<A-c>3
+nmap <Space>3, <Space>,<A-c>3
+nmap <Space>3<CR> <Space><CR><A-c>3
+nmap <Space>3a <Space>a<A-c>3
+nmap <Space>3z <Space>z<A-c>3
+nmap <Space>3x <Space>x<A-c>3
+nmap <Space>3c <Space>c<A-c>3
+nmap <Space>3l <Space>l<A-c>3
+nmap <Space>3k <Space>k<A-c>3
+nmap <Space>3j <Space>j<A-c>3
+nmap <Space>3t <Space>t<A-c>3
+nmap <Space>3u <Space>u<A-c>3
+nmap <Space>3i <Space>tu<A-c>3
+nmap <Space>3Z <Space>Z<A-c>3
+nmap <Space>3X <Space>X<A-c>3
+nmap <Space>3C <Space>C<A-c>3
+nmap <Space>3L <Space>L<A-c>3
+nmap <Space>3K <Space>K<A-c>3
+nmap <Space>3J <Space>J<A-c>3
+nmap <Space>3T <Space>T<A-c>3
+nmap <Space>3U <Space>U<A-c>3
+nmap <Space>3I <Space>TU<A-c>3
+
+nmap <Space>4 <Space><A-c>4
+nmap <Space>4<Left> <Space><Left><A-c>4
+nmap <Space>4<Right> <Space><Right><A-c>4
+nmap <Space>4. <Space>.<A-c>4
+nmap <Space>4, <Space>,<A-c>4
+nmap <Space>4<CR> <Space><CR><A-c>4
+nmap <Space>4a <Space>a<A-c>4
+nmap <Space>4z <Space>z<A-c>4
+nmap <Space>4x <Space>x<A-c>4
+nmap <Space>4c <Space>c<A-c>4
+nmap <Space>4l <Space>l<A-c>4
+nmap <Space>4k <Space>k<A-c>4
+nmap <Space>4j <Space>j<A-c>4
+nmap <Space>4t <Space>t<A-c>4
+nmap <Space>4u <Space>u<A-c>4
+nmap <Space>4i <Space>tu<A-c>4
+nmap <Space>4Z <Space>Z<A-c>4
+nmap <Space>4X <Space>X<A-c>4
+nmap <Space>4C <Space>C<A-c>4
+nmap <Space>4L <Space>L<A-c>4
+nmap <Space>4K <Space>K<A-c>4
+nmap <Space>4J <Space>J<A-c>4
+nmap <Space>4T <Space>T<A-c>4
+nmap <Space>4U <Space>U<A-c>4
+nmap <Space>4I <Space>TU<A-c>4
+
+nmap <Space>5 <Space><A-c>5
+nmap <Space>5<Left> <Space><Left><A-c>5
+nmap <Space>5<Right> <Space><Right><A-c>5
+nmap <Space>5. <Space>.<A-c>5
+nmap <Space>5, <Space>,<A-c>5
+nmap <Space>5<CR> <Space><CR><A-c>5
+nmap <Space>5a <Space>a<A-c>5
+nmap <Space>5z <Space>z<A-c>5
+nmap <Space>5x <Space>x<A-c>5
+nmap <Space>5c <Space>c<A-c>5
+nmap <Space>5l <Space>l<A-c>5
+nmap <Space>5k <Space>k<A-c>5
+nmap <Space>5j <Space>j<A-c>5
+nmap <Space>5t <Space>t<A-c>5
+nmap <Space>5u <Space>u<A-c>5
+nmap <Space>5i <Space>tu<A-c>5
+nmap <Space>5Z <Space>Z<A-c>5
+nmap <Space>5X <Space>X<A-c>5
+nmap <Space>5C <Space>C<A-c>5
+nmap <Space>5L <Space>L<A-c>5
+nmap <Space>5K <Space>K<A-c>5
+nmap <Space>5J <Space>J<A-c>5
+nmap <Space>5T <Space>T<A-c>5
+nmap <Space>5U <Space>U<A-c>5
+nmap <Space>5I <Space>TU<A-c>5
+
+nmap <Space>6 <Space><A-c>6
+nmap <Space>6<Left> <Space><Left><A-c>6
+nmap <Space>6<Right> <Space><Right><A-c>6
+nmap <Space>6. <Space>.<A-c>6
+nmap <Space>6, <Space>,<A-c>6
+nmap <Space>6<CR> <Space><CR><A-c>6
+nmap <Space>6a <Space>a<A-c>6
+nmap <Space>6z <Space>z<A-c>6
+nmap <Space>6x <Space>x<A-c>6
+nmap <Space>6c <Space>c<A-c>6
+nmap <Space>6l <Space>l<A-c>6
+nmap <Space>6k <Space>k<A-c>6
+nmap <Space>6j <Space>j<A-c>6
+nmap <Space>6t <Space>t<A-c>6
+nmap <Space>6u <Space>u<A-c>6
+nmap <Space>6i <Space>tu<A-c>6
+nmap <Space>6Z <Space>Z<A-c>6
+nmap <Space>6X <Space>X<A-c>6
+nmap <Space>6C <Space>C<A-c>6
+nmap <Space>6L <Space>L<A-c>6
+nmap <Space>6K <Space>K<A-c>6
+nmap <Space>6J <Space>J<A-c>6
+nmap <Space>6T <Space>T<A-c>6
+nmap <Space>6U <Space>U<A-c>6
+nmap <Space>6I <Space>TU<A-c>6
+
+nmap <Space>7 <Space><A-c>7
+nmap <Space>7<Left> <Space><Left><A-c>7
+nmap <Space>7<Right> <Space><Right><A-c>7
+nmap <Space>7. <Space>.<A-c>7
+nmap <Space>7, <Space>,<A-c>7
+nmap <Space>7<CR> <Space><CR><A-c>7
+nmap <Space>7a <Space>a<A-c>7
+nmap <Space>7z <Space>z<A-c>7
+nmap <Space>7x <Space>x<A-c>7
+nmap <Space>7c <Space>c<A-c>7
+nmap <Space>7l <Space>l<A-c>7
+nmap <Space>7k <Space>k<A-c>7
+nmap <Space>7j <Space>j<A-c>7
+nmap <Space>7t <Space>t<A-c>7
+nmap <Space>7u <Space>u<A-c>7
+nmap <Space>7i <Space>tu<A-c>7
+nmap <Space>7Z <Space>Z<A-c>7
+nmap <Space>7X <Space>X<A-c>7
+nmap <Space>7C <Space>C<A-c>7
+nmap <Space>7L <Space>L<A-c>7
+nmap <Space>7K <Space>K<A-c>7
+nmap <Space>7J <Space>J<A-c>7
+nmap <Space>7T <Space>T<A-c>7
+nmap <Space>7U <Space>U<A-c>7
+nmap <Space>7I <Space>TU<A-c>7
+
+nmap <Space>8 <Space><A-c>8
+nmap <Space>8<Left> <Space><Left><A-c>8
+nmap <Space>8<Right> <Space><Right><A-c>8
+nmap <Space>8. <Space>.<A-c>8
+nmap <Space>8, <Space>,<A-c>8
+nmap <Space>8<CR> <Space><CR><A-c>8
+nmap <Space>8a <Space>a<A-c>8
+nmap <Space>8z <Space>z<A-c>8
+nmap <Space>8x <Space>x<A-c>8
+nmap <Space>8c <Space>c<A-c>8
+nmap <Space>8l <Space>l<A-c>8
+nmap <Space>8k <Space>k<A-c>8
+nmap <Space>8j <Space>j<A-c>8
+nmap <Space>8t <Space>t<A-c>8
+nmap <Space>8u <Space>u<A-c>8
+nmap <Space>8i <Space>tu<A-c>8
+nmap <Space>8Z <Space>Z<A-c>8
+nmap <Space>8X <Space>X<A-c>8
+nmap <Space>8C <Space>C<A-c>8
+nmap <Space>8L <Space>L<A-c>8
+nmap <Space>8K <Space>K<A-c>8
+nmap <Space>8J <Space>J<A-c>8
+nmap <Space>8T <Space>T<A-c>8
+nmap <Space>8U <Space>U<A-c>8
+nmap <Space>8I <Space>TU<A-c>8
+
+nmap <Space>9 <Space><A-c>9
+nmap <Space>9<Left> <Space><Left><A-c>9
+nmap <Space>9<Right> <Space><Right><A-c>9
+nmap <Space>9. <Space>.<A-c>9
+nmap <Space>9, <Space>,<A-c>9
+nmap <Space>9<CR> <Space><CR><A-c>9
+nmap <Space>9a <Space>a<A-c>9
+nmap <Space>9z <Space>z<A-c>9
+nmap <Space>9x <Space>x<A-c>9
+nmap <Space>9c <Space>c<A-c>9
+nmap <Space>9l <Space>l<A-c>9
+nmap <Space>9k <Space>k<A-c>9
+nmap <Space>9j <Space>j<A-c>9
+nmap <Space>9t <Space>t<A-c>9
+nmap <Space>9u <Space>u<A-c>9
+nmap <Space>9i <Space>tu<A-c>9
+nmap <Space>9Z <Space>Z<A-c>9
+nmap <Space>9X <Space>X<A-c>9
+nmap <Space>9C <Space>C<A-c>9
+nmap <Space>9L <Space>L<A-c>9
+nmap <Space>9K <Space>K<A-c>9
+nmap <Space>9J <Space>J<A-c>9
+nmap <Space>9T <Space>T<A-c>9
+nmap <Space>9U <Space>U<A-c>9
+nmap <Space>9I <Space>TU<A-c>9
+
+nmap <C-L><Up> V<Up>
+nmap <C-L><Down> V<Down>
+nmap <C-L><Left> <Left>v
+nmap <C-L><Right> v<Right>
+imap <C-L><Up> <C-O>V<C-G><Up>
+imap <C-L><Down> <C-O>V<C-G><Down>
+imap <C-L><Left> <Left><C-O>gh
+imap <C-L><Right> <C-O>gh<Right>
+
+nmap <S-Up> V<Up>
+nmap <S-Down> V<Down>
+nmap <S-Left> <Left>v
+nmap <S-Right> v<Right>
+imap <S-Up> <C-O>V<C-G><Up>
+imap <S-Down> <C-O>V<C-G><Down>
+imap <S-Left> <Left><C-O>gh
+imap <S-Right> <C-O>gh<Right>
+nmap <S-End> v<End><Left>
+nmap <S-Home> v<Home>
+imap <S-End> <C-O>gh<End><Left>
+imap <S-Home> <C-O>gh<Home>
+
+nmap K V<Up>
+nmap J V<Down>
+nmap H <Left>v
+nmap L v<Right>
+xmap K <Up>
+xmap J <Down>
+xmap H <Left>
+xmap L <Right>
+
+nnoremap <A-Up> :1,copy0<CR>
+nnoremap <A-Down> :.,$copy$<CR>
+nnoremap <A-Left> :let @v = @"<CR>v^yI<C-R>" <Esc>^:let @" = @v<CR>
+nnoremap <A-Right> :let @v = @"<CR>y$A <C-R>"<Esc>:let @" = @v<CR>
+inoremap <A-Up> <C-O>:1,copy0<CR>
+inoremap <A-Down> <C-O>:.,$copy$<CR>
+inoremap <A-Left> <C-O>:let @v = @"<CR><C-O>v^y<C-R>" <C-O>^<C-O>:let @" = @v<CR>
+inoremap <A-Right> <C-O>:let @v = @"<CR><C-O>y$<End> <C-R>"<C-O>:let @" = @v<CR>
+
+xnoremap <A-Up> :copy0<CR>
+xnoremap <A-Down> :copy$<CR>
+xnoremap <A-Left> <Esc>:let @v = @"<CR>gvyI<C-R>" <Esc>:let @" = @v<CR>
+xnoremap <A-Right> <Esc>:let @v = @"<CR>gvyA <C-R>"<Esc>:let @" = @v<CR>
+smap <A-Up> <C-G><A-Up>gv<C-G>
+smap <A-Down> <C-G><A-Down>gv<C-G>
+smap <A-Left> <C-G><A-Left><Left>v^<C-G>
+smap <A-Right> <C-G><A-Right>gv<C-G>
+
+nnoremap <A-v><Up> Vgg"mP
+nnoremap <A-v><Down> VG"mP
+nnoremap <A-v><Left> v^"mP^
+nnoremap <A-v><Right> v$<Left>"mPgv"_y
+imap <A-v><Up> <C-O><A-v><Up>
+imap <A-v><Down> <C-O><A-v><Down>
+inoremap <A-v><Left> <C-O>v^"mP<C-O>^
+inoremap <A-v><Right> <C-O>v$<Left>"mP<C-O>gv"_y
+
+inoremap <A-v> <C-O>T <C-O>vt "mP<C-O>gv"_y
+inoremap <A-v>p <C-O>o<C-R>"<C-O>^
+inoremap <A-v>v <C-O>o<C-R>m<C-O>^
+imap <A-v>1 <C-O>o<A-1><C-O>^
+imap <A-v>2 <C-O>o<A-2><C-O>^
+imap <A-v>3 <C-O>o<A-3><C-O>^
+imap <A-v>4 <C-O>o<A-4><C-O>^
+imap <A-v>5 <C-O>o<A-5><C-O>^
+imap <A-v>6 <C-O>o<A-6><C-O>^
+imap <A-v>7 <C-O>o<A-7><C-O>^
+imap <A-v>8 <C-O>o<A-8><C-O>^
+imap <A-v>9 <C-O>o<A-9><C-O>^
+imap <A-v>0 <C-O>o<A-0><C-O>^
+
+nnoremap <A-t> i<Right><<C-R>"></<C-R>"><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>p i<Right><<C-R>"></<C-R>"><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>t i<Right><<C-R>m></<C-R>m><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>1 i<Right><<C-R>q></<C-R>q><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>2 i<Right><<C-R>w></<C-R>w><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>3 i<Right><<C-R>e></<C-R>e><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>4 i<Right><<C-R>r></<C-R>r><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>5 i<Right><<C-R>t></<C-R>t><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>6 i<Right><<C-R>y></<C-R>y><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>7 i<Right><<C-R>u></<C-R>u><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>8 i<Right><<C-R>i></<C-R>i><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>9 i<Right><<C-R>o></<C-R>o><Esc>vat"_yva<<Esc><Right>
+nnoremap <A-t>0 i<Right><<C-R>0></<C-R>0><Esc>vat"_yva<<Esc><Right>
+
+inoremap <A-t> <<C-R>"></<C-R>"><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>p <<C-R>"></<C-R>"><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>t <<C-R>m></<C-R>m><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>1 <<C-R>q></<C-R>q><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>2 <<C-R>w></<C-R>w><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>3 <<C-R>e></<C-R>e><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>4 <<C-R>r></<C-R>r><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>5 <<C-R>t></<C-R>t><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>6 <<C-R>y></<C-R>y><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>7 <<C-R>u></<C-R>u><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>8 <<C-R>i></<C-R>i><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>9 <<C-R>o></<C-R>o><Esc>vat"_yva<<Esc><Right>i
+inoremap <A-t>0 <<C-R>0></<C-R>0><Esc>vat"_yva<<Esc><Right>i
+
+nnoremap <A-d><Up> :1,.d _<CR>
+nnoremap <A-d><Down> :.,$d _<CR>
+nnoremap <A-d><Left> v^"_d
+nnoremap <A-d><Right> "_d$
+imap <A-d><Up> <C-O><A-d><Up>
+imap <A-d><Down> <C-O><A-d><Down>
+imap <A-d><Left> <C-O><A-d><Left>
+imap <A-d><Right> <C-O><A-d><Right>
+nnoremap <A-d>d ^"_d$
+inoremap <A-d>d <C-O>^<C-O>"_d$
+nnoremap <A-d>z "_di`
+inoremap <A-d>z <C-O>"_di`
+nnoremap <A-D>Z "_da`
+inoremap <A-D>Z <C-O>"_da`
+nnoremap <A-d>x "_di"
+inoremap <A-d>x <C-O>"_di"
+nnoremap <A-D>X "_da"
+inoremap <A-D>X <C-O>"_da"
+nnoremap <A-d>c "_di'
+inoremap <A-d>c <C-O>"_di'
+nnoremap <A-D>C "_da'
+inoremap <A-D>C <C-O>"_da'
+nnoremap <A-d>j "_di[
+inoremap <A-d>j <C-O>"_di[
+nnoremap <A-D>J "_da[
+inoremap <A-D>J <C-O>"_da[
+nnoremap <A-d>k "_di{
+inoremap <A-d>k <C-O>"_di{
+nnoremap <A-D>K "_da{
+inoremap <A-D>K <C-O>"_da{
+nnoremap <A-d>l "_di(
+inoremap <A-d>l <C-O>"_di(
+nnoremap <A-D>L "_da(
+inoremap <A-D>L <C-O>"_da(
+nnoremap <A-d>t "_dit
+inoremap <A-d>t <C-O>"_dit
+nnoremap <A-D>T "_dat
+inoremap <A-D>T <C-O>"_dat
+nnoremap <A-d>u "_di<
+inoremap <A-d>u <C-O>"_di<
+nnoremap <A-D>U "_da<
+inoremap <A-D>U <C-O>"_da<
+nnoremap <A-d><CR> "_dip
+inoremap <A-d><CR> <C-O>"_dip
+
+nmap <A-i>d "=strftime("%d/%m/%Y")<CR>p
+nmap <A-i>t "=strftime("%H:%M")<CR>p
+imap <A-i>d <C-R>=strftime("%d/%m/%Y")<CR>
+imap <A-i>t <C-R>=strftime("%H:%M")<CR>
+xmap <A-i>d "=strftime("%d/%m/%Y")<CR>p
+xmap <A-i>t "=strftime("%H:%M")<CR>p
+smap <A-i>d <C-G>"=strftime("%d/%m/%Y")<CR>p
+smap <A-i>t <C-G>"=strftime("%H:%M")<CR>p
+
+xnoremap <A-i><Up> <Esc>:let @v = @"<CR>gvy<Up>A <C-R>"<Esc>gv"_y:let @" = @v<CR>
+xnoremap <A-i><Down> <Esc>:let @v = @"<CR>gvy<Down>A <C-R>"<Esc>gv"_y:let @" = @v<CR>
+snoremap <A-i><Up> <Esc>:let @v = @"<CR>gvy<Up>A <C-R>"<Esc>:let @" = @v<CR>gv<C-G>
+snoremap <A-i><Down> <Esc>:let @v = @"<CR>gvy<Down>A <C-R>"<Esc>:let @" = @v<CR>gv<C-G>
+
+nnoremap <A-i>p :ter ++rows=5 curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim<CR>
+nnoremap <A-i>pp :PlugInstall<CR>
+nnoremap <A-i>pc :CocInstall coc-snippets coc-html coc-css coc-tsserver coc-html-css-support coc-cssmodules coc-htmlhint coc-json coc-sql coc-java coc-clangd coc-sh coc-markdownlint
+nnoremap <A-i>pe :CocList extensions<CR>
+nnoremap <A-i>ps :CocList snippets<CR>
+
+nmap <A-o>z :let @v = @"<CR>"byi`:tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>x :let @v = @"<CR>"byi":tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>c :let @v = @"<CR>"byi':tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>j :let @v = @"<CR>"byi[:tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>k :let @v = @"<CR>"byi{:tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>l :let @v = @"<CR>"byi(:tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>u :let @v = @"<CR>"byi<:tabe <C-R>b<CR>:let @" = @v<CR>
+nnoremap <A-o>t :let @v = @"<CR>vat"_y/href=<CR>f"<Right>vt""by:tabe <C-R>b<CR>:let @" = @v<CR>
+nmap <A-o>s :tabe ~/.vimrc<CR>
+
+nmap <A-s><Up> Vgg
+nmap <A-s><Down> VG
+nmap <A-s><Left> v^
+nmap <A-s><Right> v$<Left>
+imap <A-s><Up> <C-O>Vgg<C-G>
+imap <A-s><Down> <C-O>VG<C-G>
+imap <A-s><Left> <C-O>v^<C-G>
+imap <A-s><Right> <C-O>gh<End><Left>
+nmap <A-s>z vi`
+imap <A-s>z <C-O>vi`<C-G>
+nmap <A-S>Z va`
+imap <A-S>Z <C-O>va`<C-G>
+nmap <A-s>x vi"
+imap <A-s>x <C-O>vi"<C-G>
+nmap <A-S>X va"
+imap <A-S>X <C-O>va"<C-G>
+nmap <A-s>c vi'
+imap <A-s>c <C-O>vi'<C-G>
+nmap <A-S>C va'
+imap <A-S>C <C-O>va'<C-G>
+nmap <A-s>j vi[
+imap <A-s>j <C-O>vi[<C-G>
+nmap <A-S>J va[
+imap <A-S>J <C-O>va[<C-G>
+nmap <A-s>k vi{
+imap <A-s>k <C-O>vi{<C-G>
+nmap <A-S>K va{
+imap <A-S>K <C-O>va{<C-G>
+nmap <A-s>l vi(
+imap <A-s>l <C-O>vi(<C-G>
+nmap <A-S>L va(
+imap <A-S>L <C-O>va(<C-G>
+nmap <A-s>u vi<
+imap <A-s>u <C-O>vi<<C-G>
+nmap <A-S>U va<
+imap <A-S>U <C-O>va<<C-G>
+nmap <A-s>t vit
+imap <A-s>t <C-O>vit<C-G>
+nmap <A-S>T vat
+imap <A-S>T <C-O>vat<C-G>
+nmap <A-s>, va<V
+imap <A-s>, <C-O>va<V<C-G>
+nmap <A-s>. vis
+imap <A-s>. <C-O>vis<C-G>
+nmap <A-s><CR> vip
+imap <A-s><CR> <C-O>vip<C-G>
+nnoremap <A-s><Space> T vt 
+inoremap <A-s><Space> <C-O>T <C-O>vt <C-G>
+
+xnoremap j a[
+xnoremap k a{
+xnoremap l a(
+xnoremap t it
+xnoremap . ;
+xnoremap <CR> ip
+xnoremap w iw
+
+onoremap z i`
+onoremap x i"
+onoremap c i'
+onoremap j i[
+onoremap k i{
+onoremap l i(
+onoremap , a<
+onoremap . is
+onoremap <CR> ip
+onoremap t it
+onoremap T at
+
+inoremap " ""<Left>
+inoremap ' ''<Left>
+inoremap ` ``<Left>
+inoremap [ []<Left>
+inoremap { {}<Left>
+inoremap ( ()<Left>
+
+nmap <C-Up> 2<C-Y>
+nmap <C-Down> 2<C-E>
+nmap <C-Left> 5zh
+nmap <C-Right> 5zl
+imap <C-Up> <C-O>2<C-Y>
+imap <C-Down> <C-O>2<C-E>
+imap <C-Left> <C-O>5zh
+imap <C-Right> <C-O>5zl
+imap <ScrollWheelUp> <C-O><C-Y>
+imap <ScrollWheelDown> <C-O><C-E>
+nmap <BS> 5zl
+nmap <CR> 5<C-E>
+nmap h 15zh
+nmap l 5<C-Y>
+
+nmap <C-O> :Lexplore<CR>
+nmap mr :bro ol<CR>
+nmap mmr :filter /\c/ bro ol<Left><Left><Left><Left><Left><Left><Left><Left><Left><Left>
+nmap me :tab sp<CR>:CocCommand snippets.editSnippets<CR>
+nmap mme :CocList extensions<CR>
+snoremap <C-Q> <C-G><C-Q><C-G>
+
+nmap mt :ter ++rows=5<CR>
+tmap <C-T>h <C-W>K
+tmap <C-T>v <C-W>H
+tmap <C-T>k <C-W>R
+tmap <C-T>j <C-W>r
+tmap <C-T>w <C-W>=
+tmap <C-T>m <C-W>:res<CR><C-W>:vert res<CR>
+tmap <C-T>s <C-W>:res 1<CR><C-W>:vert res 1<CR>
+tmap <C-T>t <C-W>N
+
+nmap 0 :reg<CR>
+nmap <A-c>1 :y q<CR>
+nmap <A-c>2 :y w<CR>
+nmap <A-c>3 :y e<CR>
+nmap <A-c>4 :y r<CR>
+nmap <A-c>5 :y t<CR>
+nmap <A-c>6 :y y<CR>
+nmap <A-c>7 :y u<CR>
+nmap <A-c>8 :y i<CR>
+nmap <A-c>9 :y o<CR>
+nmap <A-a> :y M<CR>
+nmap <A-a>1 :y Q<CR>
+nmap <A-a>2 :y W<CR>
+nmap <A-a>3 :y E<CR>
+nmap <A-a>4 :y R<CR>
+nmap <A-a>5 :y T<CR>
+nmap <A-a>6 :y Y<CR>
+nmap <A-a>7 :y U<CR>
+nmap <A-a>8 :y I<CR>
+nmap <A-a>9 :y O<CR>
+
+xmap <A-c>1 "qy
+xmap <A-c>2 "wy
+xmap <A-c>3 "ey
+xmap <A-c>4 "ry
+xmap <A-c>5 "ty
+xmap <A-c>6 "yy
+xmap <A-c>7 "uy
+xmap <A-c>8 "iy
+xmap <A-c>9 "oy
+xmap <A-a> "My
+xmap <A-a>1 "Qy
+xmap <A-a>2 "Wy
+xmap <A-a>3 "Ey
+xmap <A-a>4 "Ry
+xmap <A-a>5 "Ty
+xmap <A-a>6 "Yy
+xmap <A-a>7 "Uy
+xmap <A-a>8 "Iy
+xmap <A-a>9 "Oy
+
+smap <A-c>1 <C-G>"qy
+smap <A-c>2 <C-G>"wy
+smap <A-c>3 <C-G>"ey
+smap <A-c>4 <C-G>"ry
+smap <A-c>5 <C-G>"ty
+smap <A-c>6 <C-G>"yy
+smap <A-c>7 <C-G>"uy
+smap <A-c>8 <C-G>"iy
+smap <A-c>9 <C-G>"oy
+smap <A-a> <C-G>"My
+smap <A-a>1 <C-G>"Qy
+smap <A-a>2 <C-G>"Wy
+smap <A-a>3 <C-G>"Ey
+smap <A-a>4 <C-G>"Ry
+smap <A-a>5 <C-G>"Ty
+smap <A-a>6 <C-G>"Yy
+smap <A-a>7 <C-G>"Uy
+smap <A-a>8 <C-G>"Iy
+smap <A-a>9 <C-G>"Oy
+
+nmap <A-1> "qP
+nmap <A-2> "wP
+nmap <A-3> "eP
+nmap <A-4> "rP
+nmap <A-5> "tP
+nmap <A-6> "yP
+nmap <A-7> "uP
+nmap <A-8> "iP
+nmap <A-9> "oP
+nmap <A-0> "0P
+
+xmap <A-1> "qP
+xmap <A-2> "wP
+xmap <A-3> "eP
+xmap <A-4> "rP
+xmap <A-5> "tP
+xmap <A-6> "yP
+xmap <A-7> "uP
+xmap <A-8> "iP
+xmap <A-9> "oP
+xmap <A-0> "0P
+
+smap <A-1> <C-G>"qP
+smap <A-2> <C-G>"wP
+smap <A-3> <C-G>"eP
+smap <A-4> <C-G>"rP
+smap <A-5> <C-G>"tP
+smap <A-6> <C-G>"yP
+smap <A-7> <C-G>"uP
+smap <A-8> <C-G>"iP
+smap <A-9> <C-G>"oP
+smap <A-0> <C-G>"0P
+
+map! <A-1> <C-R>q
+map! <A-2> <C-R>w
+map! <A-3> <C-R>e
+map! <A-4> <C-R>r
+map! <A-5> <C-R>t
+map! <A-6> <C-R>y
+map! <A-7> <C-R>u
+map! <A-8> <C-R>i
+map! <A-9> <C-R>o
+map! <A-0> <C-R>0
+
+tmap <A-1> <C-W>"q
+tmap <A-2> <C-W>"w
+tmap <A-3> <C-W>"e
+tmap <A-4> <C-W>"r
+tmap <A-5> <C-W>"t
+tmap <A-6> <C-W>"y
+tmap <A-7> <C-W>"u
+tmap <A-8> <C-W>"i
+tmap <A-9> <C-W>"o
+tmap <A-0> <C-W>"0
+
+nnoremap @ q
+nnoremap mz @
+xnoremap @ q
+xnoremap mz @
+
+nnoremap @1 qa
+nnoremap @2 qs
+nnoremap @3 qd
+nnoremap @4 qf
+nnoremap @5 qg
+nnoremap @6 qh
+nnoremap @7 qj
+nnoremap @8 qk
+nnoremap @9 ql
+nnoremap @0 qn
+nnoremap @a1 qA
+nnoremap @a2 qS
+nnoremap @a3 qD
+nnoremap @a4 qF
+nnoremap @a5 qG
+nnoremap @a6 qH
+nnoremap @a7 qJ
+nnoremap @a8 qK
+nnoremap @a9 qL
+nnoremap @a0 qN
+
+xnoremap @1 qa
+xnoremap @2 qs
+xnoremap @3 qd
+xnoremap @4 qf
+xnoremap @5 qg
+xnoremap @6 qh
+xnoremap @7 qj
+xnoremap @8 qk
+xnoremap @9 ql
+xnoremap @0 qn
+xnoremap @a1 qA
+xnoremap @a2 qS
+xnoremap @a3 qD
+xnoremap @a4 qF
+xnoremap @a5 qG
+xnoremap @a6 qH
+xnoremap @a7 qJ
+xnoremap @a8 qK
+xnoremap @a9 qL
+xnoremap @a0 qN
+
+nnoremap zz @@
+nnoremap z1 @a
+nnoremap z2 @s
+nnoremap z3 @d
+nnoremap z4 @f
+nnoremap z5 @g
+nnoremap z6 @h
+nnoremap z7 @j
+nnoremap z8 @k
+nnoremap z9 @l
+nnoremap z0 @n
+
+xnoremap zz @@
+xnoremap z1 @a
+xnoremap z2 @s
+xnoremap z3 @d
+xnoremap z4 @f
+xnoremap z5 @g
+xnoremap z6 @h
+xnoremap z7 @j
+xnoremap z8 @k
+xnoremap z9 @l
+xnoremap z0 @n
+
+nmap m0 :marks<CR>
+nmap m1 mQ
+nmap m2 mW
+nmap m3 mE
+nmap m4 mR
+nmap m5 mT
+nmap m6 mY
+nmap m7 mU
+nmap m8 mI
+nmap m9 mO
+
+nmap jj ``
+nmap j0 `0
+nmap j1 `Q
+nmap j2 `W
+nmap j3 `E
+nmap j4 `R
+nmap j5 `T
+nmap j6 `Y
+nmap j7 `U
+nmap j8 `I
+nmap j9 `O
+nmap jq `Q
+nmap jw `W
+nmap je `E
+nmap jr `R
+nmap jt `T
+nmap jy `Y
+nmap ju `U
+nmap ji `I
+nmap jo `O
+nmap jp `P
+nmap ja `A
+nmap js `S
+nmap jd `D
+nmap jf `F
+nmap jg `G
+nmap jh `H
+nmap jk `K
+nmap jl `L
+nmap jz `Z
+nmap jx `X
+nmap jc `C
+nmap jv `V
+nmap jb `B
+nmap jn `N
+nmap jm `M
+
+nmap jw0 :new<CR>`0
+nmap jw1 :new<CR>`Q
+nmap jw2 :new<CR>`W
+nmap jw3 :new<CR>`E
+nmap jw4 :new<CR>`R
+nmap jw5 :new<CR>`T
+nmap jw6 :new<CR>`Y
+nmap jw7 :new<CR>`U
+nmap jw8 :new<CR>`I
+nmap jw9 :new<CR>`O
+nmap jwq :new<CR>`Q
+nmap jww :new<CR>`W
+nmap jwe :new<CR>`E
+nmap jwr :new<CR>`R
+nmap jwt :new<CR>`T
+nmap jwy :new<CR>`Y
+nmap jwu :new<CR>`U
+nmap jwi :new<CR>`I
+nmap jwo :new<CR>`O
+nmap jwp :new<CR>`P
+nmap jwa :new<CR>`A
+nmap jws :new<CR>`S
+nmap jwd :new<CR>`D
+nmap jwf :new<CR>`F
+nmap jwg :new<CR>`G
+nmap jwh :new<CR>`H
+nmap jwj :new<CR>`J
+nmap jwk :new<CR>`K
+nmap jwl :new<CR>`L
+nmap jwz :new<CR>`Z
+nmap jwx :new<CR>`X
+nmap jwc :new<CR>`C
+nmap jwv :new<CR>`V
+nmap jwb :new<CR>`B
+nmap jwn :new<CR>`N
+nmap jwm :new<CR>`M
+
+nmap jv0 :botright vne<CR>`0
+nmap jv1 :botright vne<CR>`Q
+nmap jv2 :botright vne<CR>`W
+nmap jv3 :botright vne<CR>`E
+nmap jv4 :botright vne<CR>`R
+nmap jv5 :botright vne<CR>`T
+nmap jv6 :botright vne<CR>`Y
+nmap jv7 :botright vne<CR>`U
+nmap jv8 :botright vne<CR>`I
+nmap jv9 :botright vne<CR>`O
+nmap jvq :botright vne<CR>`Q
+nmap jvw :botright vne<CR>`W
+nmap jve :botright vne<CR>`E
+nmap jvr :botright vne<CR>`R
+nmap jvt :botright vne<CR>`T
+nmap jvy :botright vne<CR>`Y
+nmap jvu :botright vne<CR>`U
+nmap jvi :botright vne<CR>`I
+nmap jvo :botright vne<CR>`O
+nmap jvp :botright vne<CR>`P
+nmap jva :botright vne<CR>`A
+nmap jvs :botright vne<CR>`S
+nmap jvd :botright vne<CR>`D
+nmap jvf :botright vne<CR>`F
+nmap jvg :botright vne<CR>`G
+nmap jvh :botright vne<CR>`H
+nmap jvj :botright vne<CR>`J
+nmap jvk :botright vne<CR>`K
+nmap jvl :botright vne<CR>`L
+nmap jvz :botright vne<CR>`Z
+nmap jvx :botright vne<CR>`X
+nmap jvc :botright vne<CR>`C
+nmap jvv :botright vne<CR>`V
+nmap jvb :botright vne<CR>`B
+nmap jvn :botright vne<CR>`N
+nmap jvm :botright vne<CR>`M
+
+nmap jt0 :tabe<CR>`0
+nmap jt1 :tabe<CR>`Q
+nmap jt2 :tabe<CR>`W
+nmap jt3 :tabe<CR>`E
+nmap jt4 :tabe<CR>`R
+nmap jt5 :tabe<CR>`T
+nmap jt6 :tabe<CR>`Y
+nmap jt7 :tabe<CR>`U
+nmap jt8 :tabe<CR>`I
+nmap jt9 :tabe<CR>`O
+nmap jtq :tabe<CR>`Q
+nmap jtw :tabe<CR>`W
+nmap jte :tabe<CR>`E
+nmap jtr :tabe<CR>`R
+nmap jtt :tabe<CR>`T
+nmap jty :tabe<CR>`Y
+nmap jtu :tabe<CR>`U
+nmap jti :tabe<CR>`I
+nmap jto :tabe<CR>`O
+nmap jtp :tabe<CR>`P
+nmap jta :tabe<CR>`A
+nmap jts :tabe<CR>`S
+nmap jtd :tabe<CR>`D
+nmap jtf :tabe<CR>`F
+nmap jtg :tabe<CR>`G
+nmap jth :tabe<CR>`H
+nmap jtj :tabe<CR>`J
+nmap jtk :tabe<CR>`K
+nmap jtl :tabe<CR>`L
+nmap jtz :tabe<CR>`Z
+nmap jtx :tabe<CR>`X
+nmap jtc :tabe<CR>`C
+nmap jtv :tabe<CR>`V
+nmap jtb :tabe<CR>`B
+nmap jtn :tabe<CR>`N
+nmap jtm :tabe<CR>`M
+
+nmap fd :let @v = @"<CR>:%y b<CR>:enew<CR>P:$d _<CR>gg:let @" = @v<CR>
+nmap f0 :e #0<CR>
+nmap f1 :e #1<CR>
+nmap f2 :e #2<CR>
+nmap f3 :e #3<CR>
+nmap f4 :e #4<CR>
+nmap f5 :e #5<CR>
+nmap f6 :e #6<CR>
+nmap f7 :e #7<CR>
+nmap f8 :e #8<CR>
+nmap f9 :e<CR>
+
+nmap wh <C-W>K
+nmap wvv <C-W>H
+nmap wk <C-W>R
+nmap wj <C-W>r
+nmap ww <C-W>=
+nmap wm :res<CR>:vert res<CR>
+nmap ws :res 1<CR>:vert res 1<CR>
+nmap wc :only<CR>
+nmap wd :let @v = @"<CR>:%y b<CR>:new<CR>P:$d _<CR>gg:let @" = @v<CR>
+nmap wn :new<CR>
+nmap wb :botright new<CR>
+nmap w0 :sp #0<CR>
+nmap w1 :sp #1<CR>
+nmap w2 :sp #2<CR>
+nmap w3 :sp #3<CR>
+nmap w4 :sp #4<CR>
+nmap w5 :sp #5<CR>
+nmap w6 :sp #6<CR>
+nmap w7 :sp #7<CR>
+nmap w8 :sp #8<CR>
+nmap w9 :sp<CR>
+nmap wvd :let @v = @"<CR>:%y b<CR>:botright vne<CR>P:$d _<CR>gg:let @" = @v<CR>
+nmap wvn :botright vne<CR>
+nmap wvl :vne<CR>
+nmap wv0 :botright vs #0<CR>
+nmap wv1 :botright vs #1<CR>
+nmap wv2 :botright vs #2<CR>
+nmap wv3 :botright vs #3<CR>
+nmap wv4 :botright vs #4<CR>
+nmap wv5 :botright vs #5<CR>
+nmap wv6 :botright vs #6<CR>
+nmap wv7 :botright vs #7<CR>
+nmap wv8 :botright vs #8<CR>
+nmap wv9 :botright vs<CR>
+
+nmap tt <C-W>T
+nmap tn :tabnew<CR>
+nmap tc :tabo<CR>
+nmap td :let @v = @"<CR>:%y b<CR>:tabnew<CR>P:$d _<CR>gg:let @" = @v<CR>
+nmap t0 :tabe #0<CR>
+nmap t1 :tabe #1<CR>
+nmap t2 :tabe #2<CR>
+nmap t3 :tabe #3<CR>
+nmap t4 :tabe #4<CR>
+nmap t5 :tabe #5<CR>
+nmap t6 :tabe #6<CR>
+nmap t7 :tabe #7<CR>
+nmap t8 :tabe #8<CR>
+nmap t9 :tab sp<CR>
+

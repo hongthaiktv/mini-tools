@@ -204,8 +204,7 @@ action.file() {
 			;;
 
 		*".js"|*".cjs"|*".mjs")
-			actions+=( "Run Node.js" )
-			actions+=( "Run NodeMon" )
+			actions+=( "Run Node.js" "Run NodeMon" )
 			;;
 
 		*".class")
@@ -514,23 +513,36 @@ while :; do
 
 		"4. Backup Vim")
 			TFE_ERR=()
-			runCmd "mkdir -p '$HOME/../usr/tmp/vim/.config/coc'"
-			runCmd "mkdir -p '$HOME/../usr/tmp/vim/.vim/plugged/coc.nvim/plugin'"
-			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim/vim.bak.zip' '$HOME/../usr/tmp/vim/.'"
-			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim/vim.bak.zip' '$HOME/.vimrc'"
-			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim/vim.bak.zip' '$HOME/.config/coc/ultisnips'"
+			runCmd "mkdir -p '$TMPDIR/vim/.config/coc'"
+			runCmd "mkdir -p '$TMPDIR/vim/.vim/plugged/coc.nvim/plugin'"
+			runCmd "mkdir -p '$TMPDIR/vim/bin'"
+			runCmd "cp -rf '$HOME/.config/coc/ultisnips' '$TMPDIR/vim/.config/coc'"
+			runCmd "cp -rf '$HOME/.vim/plugged/coc.nvim/plugin/coc.vim' '$TMPDIR/vim/.vim/plugged/coc.nvim/plugin'"
+			runCmd "cp -rf '$HOME/bin/'* '$TMPDIR/vim/bin'"
+			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim.zip' '$TMPDIR/vim/.' '$HOME/.termux' '$HOME/.vimrc' '$HOME/.gitconfig' '$HOME/nodemon.json' '$HOME/.bashrc'"
+			runCmd "cp -rf '/storage/emulated/0/Download/vim.zip' '$HOME/bin'"
+			runCmd "rm -rf '$TMPDIR/vim'"
+			echo
+			echo Git Push Update --------------------
+			echo
+			read -rep "Message: " cMsg
+			echo
+			git add .
+			git commit -m "$cMsg"
+			runCmd "git push"
 
 			if [[ ${#TFE_ERR[@]} > 0 ]]; then
 				echo
-				printf "Total \033[%sm${#TFE_ERR[@]}\033[0m error when backup:\n" $ERROR_COLOR
+				printf "\033[41m%s\033[93m%s\033[0m\033[41m%s\033[0m\n" "Total " "${#TFE_ERR[@]}" " error when backup:"
 				for errCmd in "${TFE_ERR[@]}"; do
-					[[ $errCmd =~ (^[a-zA-Z]+)" "(.*) ]]
+					[[ $errCmd =~ (^[a-zA-Z0-9]+)" "(.*) ]]
 					cmd="${BASH_REMATCH[1]}"
 					params="${BASH_REMATCH[2]}"
+					if [[ ${#params} -gt 40 ]]; then
+						params="${params:0:26}... ${params: -10}"
+					fi
 					printf "\t\033[%sm$cmd\033[0m $params\n" $CMD_COLOR
 				done
-#			else
-#				echo "Backup complete!"
 			fi
 			echo
 			read -rsn1 -p "Press any key to continue..." key
