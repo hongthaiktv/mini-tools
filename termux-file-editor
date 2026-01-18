@@ -105,8 +105,8 @@ action.dir() {
           			dotOpt=${dotOpt:7:1}
 					if [[ "$dotOpt" == "u" ]]; then
 						shopt -s dotglob
-						rm -rf *
-					else rm -rf *
+						rm -rf ./*
+					else rm -rf ./*
 					fi
 				else rm -rf "./$1"
 				fi
@@ -327,7 +327,6 @@ tmenu.fileExplorer() {
 
 	while :; do
 		local file_list=( "." ".." )
-		local counter=1
 		local checkPrev=0
 
 		if [[ -z "$1" ]]; then
@@ -337,8 +336,7 @@ tmenu.fileExplorer() {
 		fi
 
 		for file in *; do
-			(( ++counter ))
-			file_list[$counter]="$file"
+			file_list+=( "$file" )
 			if [[ "$prevItem" == "$file" ]]; then
 				checkPrev=1
 			fi

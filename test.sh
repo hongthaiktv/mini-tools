@@ -65,8 +65,8 @@ nmap <A-v>1 o<A-1><Esc>^
 xmap <A-v>2 o<A-2><Esc>^
 vmap <A-v>3 o<A-3><Esc>^
 nmap <A-v>4 o<A-4><Esc>^
-nmap <A-v>5 o<A-5><Esc>^
-nmap <A-v>6 o<A-6><Esc>^
+	nmap <A-v>5 o<A-5><Esc>^
+		nmap <A-v>6 o<A-6><Esc>^
 nmap <A-v>7 o<A-7><Esc>^
 nmap <A-v>8 o<A-8><Esc>^
 nmap <A-v>9 o<A-9><Esc>^
