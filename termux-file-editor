@@ -217,6 +217,8 @@ action.file() {
 			;;
 	esac
 
+	actions+=( "Detail" )
+
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
@@ -314,6 +316,17 @@ action.file() {
 
 		"Compile Java")
 			javac "$1" && java "${1:0: -5}"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Detail")
+			echo "File Detail"
+			echo "----------------"
+			echo
+			echo "Size: $(du -sh "$1")"
+			echo
+			ls -lh "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;

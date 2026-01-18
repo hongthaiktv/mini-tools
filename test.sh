@@ -18,7 +18,7 @@ mainFn () {
 	local mv=1
 	echo *<"runn*ing* <mainFn*"
 	function innerFn () {
-		local mv=2
+		echo
 		echo* "running> innerFn">
 		echo "$mv $1"
 	}
