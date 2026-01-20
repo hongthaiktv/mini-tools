@@ -497,11 +497,11 @@ while :; do
 			;;
 
 		"3. Backup document")
-			cd ~/docs
+			cd "$HOME/docs"
 			git add .
 			git commit -m "update"
 			git push
-			cd $WDIR
+			cd "$WDIR"
 			echo
 			read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 			echo
@@ -513,10 +513,11 @@ while :; do
 
 		"4. Backup Vim")
 			TFE_ERR=()
+			rm -rf "$TMPDIR/vim" 2> /dev/null
 			runCmd "mkdir -p '$TMPDIR/vim/.config/coc' '$TMPDIR/vim/.vim/plugged/coc.nvim/plugin' '$TMPDIR/vim/bin'"
 			runCmd "cp -rf '$HOME/.config/coc/ultisnips' '$TMPDIR/vim/.config/coc'"
 			runCmd "cp -rf '$HOME/.vim/plugged/coc.nvim/plugin/coc.vim' '$TMPDIR/vim/.vim/plugged/coc.nvim/plugin'"
-			runCmd "cp -rf '$HOME/bin/'* '$TMPDIR/vim/bin'"
+			runCmd "find '$HOME/bin' -mindepth 1 -maxdepth 1 ! -name '.git' -a ! -name 'vim.zip' -exec cp -rf '{}' '$TMPDIR/vim/bin' \;"
 			runCmd "7zz a -snl -y '/storage/emulated/0/Download/vim.zip' '$TMPDIR/vim/.' '$HOME/.termux' '$HOME/.vimrc' '$HOME/.gitconfig' '$HOME/nodemon.json' '$HOME/.bashrc'"
 			runCmd "cp -rf '/storage/emulated/0/Download/vim.zip' '$HOME/bin'"
 			runCmd "rm -rf '$TMPDIR/vim'"

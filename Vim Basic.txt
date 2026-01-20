@@ -617,17 +617,17 @@ imap <A-,> <C-O>g;
 imap <A-.> <C-O>g,
 nmap mj :changes<CR>
 
-nmap <C-S> :w<CR>
-imap <C-S> <C-O>:w<CR>
-xmap <C-S> :sort<CR>
-smap <C-S> <C-G>:sort<CR>
-nmap ms :wa<CR>
-nmap mms :xa<CR>
-nmap mc :x<CR>
-nmap qq :q<CR>
-nmap qa :qa<CR>
-nmap mq :q!<CR>
-nmap mmq :qa!<CR>
+nnoremap <C-S> :w<CR>
+inoremap <C-S> <C-O>:w<CR>
+xnoremap <C-S> <Esc>:w<CR>gv
+snoremap <C-S> <Esc>:w<CR>gv<C-G>
+nnoremap ms :wa<CR>
+nnoremap mms :xa<CR>
+nnoremap mc :x<CR>
+nnoremap qq :q<CR>
+nnoremap qa :qa<CR>
+nnoremap mq :q!<CR>
+nnoremap mmq :qa!<CR>
 nnoremap <A-End> $
 nnoremap <A-Home> ^
 inoremap <A-End> <End><Left>
@@ -684,8 +684,7 @@ nmap <C-F> :%s///g<Left><Left><Left>
 imap <C-F> <C-O>/<Up>
 xmap <C-F> :<BS><BS><BS><BS><BS>let @v = @"<CR>gv"by/<C-R>b<CR>:let @" = @v<CR>
 smap <C-F> <C-G><C-F>
-nmap <C-H> :sort<CR>
-imap <C-H> <C-O>:sort<CR>
+nnoremap <C-H> F 
 xmap <C-H> <Esc>:let @v = @"<CR>gv"by:let @" = @v<CR>:%s///g<Left><Left><Left><C-R>b<End><Left><Left>
 xmap <C-R> :s///g<Left><Left><Left>
 xnoremap <C-X> "md
@@ -715,7 +714,6 @@ nnoremap <C-Z> u
 inoremap <C-Z> <C-O>u
 xnoremap <C-Z> <Esc>ugv
 snoremap <C-Z> <Esc>ugv<C-G>
-imap <C-L>z <C-O><C-R>
 nmap <C-D> :copy.<CR>
 imap <C-D> <C-O>:copy.<CR>
 xmap <C-D> :copy'><CR>
@@ -782,8 +780,11 @@ nnoremap <Space>g Ffvfe"_strue<Esc>
 nnoremap <Space>f Ftvfe"_sfalse<Esc>
 nnoremap <Space>s T vt "_x"_x
 nnoremap <Space>d T vt yP<Right>i<Space><Esc>gv<Right>ygv<Esc>
+xnoremap <Space>d yP
+nnoremap <Space><Space>s gv"_d
 nmap <Space><Esc>OH jajtsjtd
 nnoremap <Space><Esc>OF :qa<CR>
+nnoremap <Space><BS> F 
 
 nnoremap <Space> T vt 
 nnoremap <Space><Space><Space> T vt ;
@@ -1389,6 +1390,8 @@ imap <C-L><Up> <C-O>V<C-G><Up>
 imap <C-L><Down> <C-O>V<C-G><Down>
 imap <C-L><Left> <Left><C-O>gh
 imap <C-L><Right> <C-O>gh<Right>
+nnoremap <C-L>s :sort<CR>
+inoremap <C-L>s <C-O>:sort<CR>
 
 nmap <S-Up> V<Up>
 nmap <S-Down> V<Down>
