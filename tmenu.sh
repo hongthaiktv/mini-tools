@@ -36,6 +36,17 @@ tmenu() {
 
 	MENU_SELECTED="${MENU_LIST[0]}"
 
+	for (( i=1 ; i<${#MENU_LIST[@]} ; i++ )); do
+		if [[ "$MENU_SELECTED" == "${MENU_LIST[$i]}" ]]; then
+			MENU_ORDER=$i
+		fi	
+	done
+
+	if [[ -z $MENU_ORDER ]]; then
+		MENU_ORDER=1
+		MENU_LIST=( "$MENU_SELECTED" "${MENU_LIST[@]}" )
+	fi
+
 	if [ ${#MENU_SELECTED} -gt 44 ]; then
 		MENU_SELECTED="${MENU_SELECTED:0:44}..."
 	fi
@@ -98,6 +109,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 		if [[ "$menu_key1" == [a-z] || "$menu_key2" == "s" && -z "$1" ]]; then
 			for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_LIST[@]} ; i++ )); do
 				list_item="${MENU_LIST[$i]}"
+				for (( index=0 ; index<${#list_item} ; index++ )); do
+					if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+						list_item="${list_item:$index}"
+						break
+					fi
+				done
 				if [[ "${list_item,,}" == $pattern ]]; then
 					search_result="${MENU_LIST[$i]}"
 					MENU_ORDER=$i
@@ -108,6 +125,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			if [[ -z "$search_result" ]]; then
 				for (( i=1 ; i<=$MENU_ORDER ; i++ )); do
 					list_item="${MENU_LIST[$i]}"
+					for (( index=0 ; index<${#list_item} ; index++ )); do
+						if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+							list_item="${list_item:$index}"
+							break
+						fi
+					done
 					if [[ "${list_item,,}" == $pattern ]]; then
 						search_result="${MENU_LIST[$i]}"
 						MENU_ORDER=$i
@@ -119,6 +142,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 		elif [[ "$menu_key1" == [A-Z] || "$menu_key2" == "S" && -z "$1" ]]; then
 			for (( i=$(( $MENU_ORDER - 1 )) ; i>0 ; i-- )); do
 				list_item="${MENU_LIST[$i]}"
+				for (( index=0 ; index<${#list_item} ; index++ )); do
+					if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+						list_item="${list_item:$index}"
+						break
+					fi
+				done
 				if [[ "${list_item,,}" == $pattern ]]; then
 					search_result="${MENU_LIST[$i]}"
 					MENU_ORDER=$i
@@ -129,6 +158,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			if [[ -z "$search_result" ]]; then
 				for (( i=$(( ${#MENU_LIST[@]} - 1 )) ; i>=$MENU_ORDER ; i-- )); do
 					list_item="${MENU_LIST[$i]}"
+					for (( index=0 ; index<${#list_item} ; index++ )); do
+						if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+							list_item="${list_item:$index}"
+							break
+						fi
+					done
 					if [[ "${list_item,,}" == $pattern ]]; then
 						search_result="${MENU_LIST[$i]}"
 						MENU_ORDER=$i
@@ -160,9 +195,6 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			fi
 			if [[ "$MENU_SELECTED" == "$list_item" ]]; then
 				printf "\033[%sm>>\033[0m \033[%sm%s\033[0m\n" "$ARROW_COLOR" "$SELECTED_COLOR" "$list_item"
-				if [[ -z $MENU_ORDER ]]; then
-					MENU_ORDER=$i
-				fi
 				MENU_SELECTED="${MENU_LIST[$i]}"
 			else
 				printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
@@ -180,13 +212,6 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 	}
 
 	tmenu.show "${MENU_LIST[@]}"
-
-	if [[ -z $MENU_ORDER ]]; then
-		# Set missing default option to first option
-		printf "\033[$(( ${#MENU_LIST[@]} - 1 ))A\033[0J"
-		MENU_LIST=( "${MENU_LIST[0]}" "${MENU_LIST[@]}" )
-		tmenu.show "${MENU_LIST[@]}"
-	fi
 
 	while :; do
 		read -rsn1 menu_key1
