@@ -233,8 +233,8 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 						;;
 
 					0)
-						echo
-						exit
+						TMENU_RESULT="EXIT"
+						break
 						;;
 
 					[1-9])

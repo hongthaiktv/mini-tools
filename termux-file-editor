@@ -337,7 +337,7 @@ tmenu.fileExplorer() {
 	local title=""
 	local prevItem=""
 
-	while :; do
+	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		local file_list=( "." ".." )
 		local checkPrev=0
 
@@ -395,7 +395,7 @@ tmenu.fileExplorer() {
 	fi
 }
 
-while :; do
+until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	clear
 	echo "           ##############################           "
 	echo "           #                            #           "
@@ -415,7 +415,7 @@ while :; do
 				eval TCMD_SRC="$TCMD_SRC"
 			fi
 
-			while :; do
+			until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 				clear
 				echo "HASH check"
 				echo "----------"
