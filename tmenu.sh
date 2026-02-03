@@ -109,12 +109,14 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 		if [[ "$menu_key1" == [a-z] || "$menu_key2" == "s" && -z "$1" ]]; then
 			for (( i=$(( $MENU_ORDER + 1 )) ; i<${#MENU_LIST[@]} ; i++ )); do
 				list_item="${MENU_LIST[$i]}"
-				for (( index=0 ; index<${#list_item} ; index++ )); do
-					if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
-						list_item="${list_item:$index}"
-						break
-					fi
-				done
+				if [[ "$menu_key1" == [a-z] ]]; then
+					for (( index=0 ; index<${#list_item} ; index++ )); do
+						if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+							list_item="${list_item:$index}"
+							break
+						fi
+					done
+				fi
 				if [[ "${list_item,,}" == $pattern ]]; then
 					search_result="${MENU_LIST[$i]}"
 					MENU_ORDER=$i
@@ -125,12 +127,14 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			if [[ -z "$search_result" ]]; then
 				for (( i=1 ; i<=$MENU_ORDER ; i++ )); do
 					list_item="${MENU_LIST[$i]}"
-					for (( index=0 ; index<${#list_item} ; index++ )); do
-						if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
-							list_item="${list_item:$index}"
-							break
-						fi
-					done
+					if [[ "$menu_key1" == [a-z] ]]; then
+						for (( index=0 ; index<${#list_item} ; index++ )); do
+							if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+								list_item="${list_item:$index}"
+								break
+							fi
+						done
+					fi
 					if [[ "${list_item,,}" == $pattern ]]; then
 						search_result="${MENU_LIST[$i]}"
 						MENU_ORDER=$i
@@ -142,12 +146,14 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 		elif [[ "$menu_key1" == [A-Z] || "$menu_key2" == "S" && -z "$1" ]]; then
 			for (( i=$(( $MENU_ORDER - 1 )) ; i>0 ; i-- )); do
 				list_item="${MENU_LIST[$i]}"
-				for (( index=0 ; index<${#list_item} ; index++ )); do
-					if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
-						list_item="${list_item:$index}"
-						break
-					fi
-				done
+				if [[ "$menu_key1" == [A-Z] ]]; then
+					for (( index=0 ; index<${#list_item} ; index++ )); do
+						if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+							list_item="${list_item:$index}"
+							break
+						fi
+					done
+				fi
 				if [[ "${list_item,,}" == $pattern ]]; then
 					search_result="${MENU_LIST[$i]}"
 					MENU_ORDER=$i
@@ -158,12 +164,14 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			if [[ -z "$search_result" ]]; then
 				for (( i=$(( ${#MENU_LIST[@]} - 1 )) ; i>=$MENU_ORDER ; i-- )); do
 					list_item="${MENU_LIST[$i]}"
-					for (( index=0 ; index<${#list_item} ; index++ )); do
-						if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
-							list_item="${list_item:$index}"
-							break
-						fi
-					done
+					if [[ "$menu_key1" == [A-Z] ]]; then
+						for (( index=0 ; index<${#list_item} ; index++ )); do
+							if [[ ${list_item:$index:1} == [a-zA-Z] ]]; then
+								list_item="${list_item:$index}"
+								break
+							fi
+						done
+					fi
 					if [[ "${list_item,,}" == $pattern ]]; then
 						search_result="${MENU_LIST[$i]}"
 						MENU_ORDER=$i
