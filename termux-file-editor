@@ -41,12 +41,16 @@ action.dir() {
 	echo "----------------"
 	echo
 
-	if [[ -z "$DST" ]]; then
-		local actions=( "Copy to TCMD" "Copy" "Delete" "Git" "Zip" "Zip to TCMD" "Detail" )
-	else
+	local actions=( "Copy to TCMD" "Copy" )
+	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
-		local actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Git" "Zip" "Zip to TCMD" "Detail" )
+		actions+=( "Copy to \"$prevDST\"" )
 	fi
+	actions+=( "Delete" )
+	if [[ -d ".git" ]]; then
+		actions+=( "Git" )
+	fi
+	actions+=( "Zip" "Zip to TCMD" "Detail" )
 
 	tmenu "${actions[@]}"
 
