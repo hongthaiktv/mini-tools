@@ -53,26 +53,34 @@ action.dir() {
 	case "$TMENU_RESULT" in
 		"Copy to TCMD")
 			if [[ -z "$TCMD_DST" ]]; then
-				read -rep "Destination: " TCMD_DST
+				read -rep "Destination: (cancel) " TCMD_DST
 				echo
 				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp -rf "./$1" "$TCMD_DST"
-			if [[ "$?" != 0 ]]; then
+			if [[ ! -z "$TCMD_DST" ]]; then
+				cp -rf "./$1" "$TCMD_DST"
+			fi
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
 		"Copy")
+			local cDST=""
 			tmenu.fileExplorer "slDst"
 			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
-				read -rep "Destination: " DST
+				read -rep "Destination: (cancel) " cDST
 				echo
-				eval DST="$DST"
+				eval cDST="$cDST"
+				if [[ ! -z "$cDST" ]]; then
+					cp -rf "./$1" "$cDST"
+				fi
+			else
+				cp -rf "./$1" "$DST"
 			fi
-			cp -rf "./$1" "$DST"
-			if [[ "$?" != 0 ]]; then
+
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -80,7 +88,7 @@ action.dir() {
 
 		"Copy to \"$prevDST\"")
 			cp -rf "./$1" "$DST"
-			if [[ "$?" != 0 ]]; then
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -223,12 +231,14 @@ action.file() {
 	case "$TMENU_RESULT" in
 		"Copy to TCMD")
 			if [[ -z "$TCMD_DST" ]]; then
-				read -rep "Destination: " TCMD_DST
+				read -rep "Destination: (cancel) " TCMD_DST
 				echo
 				eval TCMD_DST="$TCMD_DST"
 			fi
-			cp -f "./$1" "$TCMD_DST"
-			if [[ "$?" != 0 ]]; then
+			if [[ ! -z "$TCMD_DST" ]]; then
+				cp -f "./$1" "$TCMD_DST"
+			fi
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -238,15 +248,17 @@ action.file() {
 			local cDST=""
 			tmenu.fileExplorer "slDst"
 			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
-				read -rep "Destination: " cDST
+				read -rep "Destination: (cancel) " cDST
 				echo
 				eval cDST="$cDST"
-				cp -f "./$1" "$cDST"
+				if [[ ! -z "$cDST" ]]; then
+					cp -f "./$1" "$cDST"
+				fi
 			else
 				cp -f "./$1" "$DST"
 			fi
 
-			if [[ "$?" != 0 ]]; then
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -254,7 +266,7 @@ action.file() {
 
 		"Copy to \"$prevDST\"")
 			cp -f "./$1" "$DST"
-			if [[ "$?" != 0 ]]; then
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
