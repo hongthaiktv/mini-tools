@@ -47,7 +47,7 @@ action.dir() {
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
 	actions+=( "Delete" )
-	if [[ -d ".git" ]]; then
+	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
 	actions+=( "Zip" "Zip to TCMD" "Detail" )
