@@ -138,13 +138,15 @@ action.dir() {
 			echo
 
 			if [[ -z "$key" || "$key" == "P" ]]; then
-				read -rep "Message: " cMsg
+				read -rep "Message: (cancel) " cMsg
 				echo
-				git add .
-				git commit -m "$cMsg"
-				git push
-				echo
-				read -rsn1 -p "Press any key to continue..." key
+				if [[ ! -z "$cMsg" ]]; then
+					git add .
+					git commit -m "$cMsg"
+					git push
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
 			elif [[ "$key" == "p" ]]; then
 				echo
 				git pull
