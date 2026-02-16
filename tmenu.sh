@@ -204,6 +204,11 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			if [[ "$MENU_SELECTED" == "$list_item" ]]; then
 				printf "\033[%sm>>\033[0m \033[%sm%s\033[0m\n" "$ARROW_COLOR" "$SELECTED_COLOR" "$list_item"
 				MENU_SELECTED="${MENU_LIST[$i]}"
+			# test file explorer color
+			elif [[ -h "${MENU_LIST[$i]}" ]]; then
+				printf "   \033[%sm%s\033[0m\n" "96" "$list_item"
+			elif [[ -d "${MENU_LIST[$i]}" ]]; then
+				printf "   \033[%sm%s\033[0m\n" "94" "$list_item"
 			else
 				printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
 			fi
