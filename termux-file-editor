@@ -366,9 +366,17 @@ tmenu.fileExplorer() {
 		fi
 
 		for file in *; do
-			file_list+=( "$file" )
+			if [[ -d "$file" ]]; then
+				file_list+=( "$file" )
+			fi
 			if [[ "$prevItem" == "$file" ]]; then
 				checkPrev=1
+			fi
+		done
+
+		for file in *; do
+			if [[ -f "$file" ]]; then
+				file_list+=( "$file" )
 			fi
 		done
 
@@ -376,7 +384,11 @@ tmenu.fileExplorer() {
 		echo -e "$title"
 
 		if [[ -z "$prevItem" || ! -z "$prevItem" && $checkPrev == 0 ]]; then
-			prevItem=${file_list[2]}
+			if [[ ! -z "${file_list[2]}" ]]; then
+				prevItem=${file_list[2]}
+			else
+				prevItem=".."
+			fi
 		fi
 		
 		tmenu "$prevItem" "${file_list[@]}"

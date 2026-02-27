@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 tmenu() {
-	local OPTION_COLOR=${MENU_LIST_COLOR:-2}
+	local OPTION_COLOR=${MENU_LIST_COLOR:-97}
 	local SELECTED_COLOR=${MENU_SELECTED_COLOR:-46}
 	local ARROW_COLOR=${MENU_ARROW_COLOR:-91}
 	local ESC_KEY=$'\033'
@@ -205,6 +205,8 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 				printf "\033[%sm>>\033[0m \033[%sm%s\033[0m\n" "$ARROW_COLOR" "$SELECTED_COLOR" "$list_item"
 				MENU_SELECTED="${MENU_LIST[$i]}"
 			# test file explorer color
+			elif [[ "$list_item" == '.' || "$list_item" == '..' ]]; then
+				printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
 			elif [[ -h "${MENU_LIST[$i]}" ]]; then
 				printf "   \033[%sm%s\033[0m\n" "96" "$list_item"
 			elif [[ -d "${MENU_LIST[$i]}" ]]; then
