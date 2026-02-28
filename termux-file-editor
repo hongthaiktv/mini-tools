@@ -242,6 +242,9 @@ action.file() {
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
 	actions+=( "Delete" "Move" "Rename" "Edit" )
+	if [[ -x "$1" ]]; then
+		actions+=( "Run" )
+	fi
 
 	case "$1" in
 		*".zip"|*".7z"|*".gz"|*".xz"|*".tar"|*".rar")
@@ -249,7 +252,9 @@ action.file() {
 			;;
 
 		*".sh")
-			actions+=( "Run Shell" )
+			if [[ ! -x "$1" ]]; then
+				actions+=( "Run Shell" )
+			fi
 			;;
 
 		*".js"|*".cjs"|*".mjs")
@@ -366,6 +371,10 @@ action.file() {
 
 		"Edit")
 			vim "$1"
+			;;
+
+		"Run")
+			"./$1"
 			;;
 
 		"Extract")
