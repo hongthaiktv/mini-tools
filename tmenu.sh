@@ -211,6 +211,8 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 				printf "   \033[%sm%s\033[0m\n" "96" "$list_item"
 			elif [[ -d "${MENU_LIST[$i]}" ]]; then
 				printf "   \033[%sm%s\033[0m\n" "94" "$list_item"
+			elif [[ -x "${MENU_LIST[$i]}" ]]; then
+				printf "   \033[%sm%s\033[0m\n" "92" "$list_item"
 			else
 				printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
 			fi
