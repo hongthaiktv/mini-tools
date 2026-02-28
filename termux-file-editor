@@ -46,7 +46,7 @@ action.dir() {
 		local prevDST="$(basename "$DST")"
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
-	actions+=( "Delete" )
+	actions+=( "Delete" "Move" "Rename" )
 	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
@@ -71,9 +71,9 @@ action.dir() {
 			;;
 
 		"Copy")
-			local cDST=""
 			tmenu.fileExplorer "slDst"
 			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+				local cDST=""
 				read -rep "Destination: (cancel) " cDST
 				echo
 				eval cDST="$cDST"
@@ -132,6 +132,41 @@ action.dir() {
 				if [[ "$dotOpt" == "u" ]]; then
 					shopt -u dotglob
 				fi
+			fi
+			;;
+
+		"Move")
+			tmenu.fileExplorer "slDst"
+			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+				local mDST=""
+				read -rep "Destination: (cancel) " mDST
+				echo
+				eval mDST="$mDST"
+				if [[ ! -z "$mDST" ]]; then
+					mv "./$1" "$mDST"
+				fi
+			else
+				mv "./$1" "$DST"
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Rename")
+			local newName=""
+			read -rep "New name: (cancel) " newName
+			echo
+			eval newName="$newName"
+			if [[ ! -z "$newName" ]]; then
+				mv "./$1" "$newName"
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
@@ -201,12 +236,12 @@ action.file() {
 	echo "-----------"
 	echo
 
-	if [[ -z "$DST" ]]; then
-		actions=( "Copy to TCMD" "Copy" "Delete" "Edit" )
-	else
+	actions=( "Copy to TCMD" "Copy" )
+	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
-		actions=( "Copy to TCMD" "Copy" "Copy to \"$prevDST\"" "Delete" "Edit" )
+		actions+=( "Copy to \"$prevDST\"" )
 	fi
+	actions+=( "Delete" "Move" "Rename" "Edit" )
 
 	case "$1" in
 		*".zip"|*".7z"|*".gz"|*".xz"|*".tar"|*".rar")
@@ -291,6 +326,41 @@ action.file() {
 					read -rsn1 -p "Press any key to continue..." key
 				else unset prevItem
 				fi
+			fi
+			;;
+
+		"Move")
+			tmenu.fileExplorer "slDst"
+			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+				local mDST=""
+				read -rep "Destination: (cancel) " mDST
+				echo
+				eval mDST="$mDST"
+				if [[ ! -z "$mDST" ]]; then
+					mv "./$1" "$mDST"
+				fi
+			else
+				mv "./$1" "$DST"
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Rename")
+			local newName=""
+			read -rep "New name: (cancel) " newName
+			echo
+			eval newName="$newName"
+			if [[ ! -z "$newName" ]]; then
+				mv "./$1" "$newName"
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
