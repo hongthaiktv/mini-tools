@@ -30,12 +30,88 @@ if [[ ! -z "$1" ]]; then
 	echo "$(date +"%x %X") :: $TCMD_SRC" >> ~/.tfe_history
 fi
 
-runCmd () {
+runCmd() {
 	eval "$1"
 	if [[ $? != 0 ]]; then
 		TFE_ERR+=( "$1" )
 	fi
 }
+
+tmenu.fileExplorer() {
+	SRC="$(pwd)"
+	local title=""
+	local prevItem=""
+
+	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
+		local file_list=( "." ".." )
+		local checkPrev=0
+
+		if [[ -z "$1" ]]; then
+			title="\033[47m\033[30m File explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
+		elif [[ "$1" == "slDst" ]]; then
+			title="\033[44m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+		fi
+
+		for file in *; do
+			if [[ -d "$file" ]]; then
+				file_list+=( "$file" )
+			fi
+			if [[ "$prevItem" == "$file" ]]; then
+				checkPrev=1
+			fi
+		done
+
+		for file in *; do
+			if [[ -f "$file" ]]; then
+				file_list+=( "$file" )
+			fi
+		done
+
+		clear
+		printf "$title"
+
+		if [[ -z "$prevItem" || ! -z "$prevItem" && $checkPrev == 0 ]]; then
+			if [[ ! -z "${file_list[2]}" ]]; then
+				prevItem=${file_list[2]}
+			else
+				prevItem=".."
+			fi
+		fi
+		
+		tmenu "$prevItem" "${file_list[@]}"
+		
+		prevItem="$MENU_SELECTED"
+
+		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+			break
+		elif [[ "$TMENU_RESULT" == 0 ]]; then
+			if [[ "$1" == "slDst" ]]; then
+				DST="$(pwd)"
+				TMENU_RESULT="$(pwd)"
+				break
+			elif [[ -d "$MENU_SELECTED" ]]; then
+				action.dir "$MENU_SELECTED"
+			elif [[ -f "$MENU_SELECTED" ]]; then
+				action.file "$MENU_SELECTED"
+			fi
+		elif [[ "$TMENU_RESULT" == "." ]]; then
+			action.dir "$TMENU_RESULT"
+		elif [[ -d "$TMENU_RESULT" ]]; then
+			cd "$TMENU_RESULT" 
+			WDIR="$(pwd)"
+			if [[ -z "$1" ]]; then
+				SRC="$(pwd)"
+			fi
+			unset prevItem
+		elif [[ -f "$TMENU_RESULT" ]]; then
+			action.file "$TMENU_RESULT"
+		fi
+	done
+	if [[ "$1" == "slDst" ]]; then
+		cd "$SRC"
+	fi
+}
+
 action.dir() {
 	echo "Directory Action"
 	echo "----------------"
@@ -427,81 +503,6 @@ action.file() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 	esac
-}
-
-tmenu.fileExplorer() {
-	SRC="$(pwd)"
-	local title=""
-	local prevItem=""
-
-	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
-		local file_list=( "." ".." )
-		local checkPrev=0
-
-		if [[ -z "$1" ]]; then
-			title="File explorer\n-------------\n\n$(pwd)\n(0: Action | 1: Directory)\n"
-		elif [[ "$1" == "slDst" ]]; then
-			title="Select Destination\n------------------\n\n$(pwd)\n(0: Select)\n"
-		fi
-
-		for file in *; do
-			if [[ -d "$file" ]]; then
-				file_list+=( "$file" )
-			fi
-			if [[ "$prevItem" == "$file" ]]; then
-				checkPrev=1
-			fi
-		done
-
-		for file in *; do
-			if [[ -f "$file" ]]; then
-				file_list+=( "$file" )
-			fi
-		done
-
-		clear
-		echo -e "$title"
-
-		if [[ -z "$prevItem" || ! -z "$prevItem" && $checkPrev == 0 ]]; then
-			if [[ ! -z "${file_list[2]}" ]]; then
-				prevItem=${file_list[2]}
-			else
-				prevItem=".."
-			fi
-		fi
-		
-		tmenu "$prevItem" "${file_list[@]}"
-		
-		prevItem="$MENU_SELECTED"
-
-		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
-			break
-		elif [[ "$TMENU_RESULT" == 0 ]]; then
-			if [[ "$1" == "slDst" ]]; then
-				DST="$(pwd)"
-				TMENU_RESULT="$(pwd)"
-				break
-			elif [[ -d "$MENU_SELECTED" ]]; then
-				action.dir "$MENU_SELECTED"
-			elif [[ -f "$MENU_SELECTED" ]]; then
-				action.file "$MENU_SELECTED"
-			fi
-		elif [[ "$TMENU_RESULT" == "." ]]; then
-			action.dir "$TMENU_RESULT"
-		elif [[ -d "$TMENU_RESULT" ]]; then
-			cd "$TMENU_RESULT" 
-			WDIR="$(pwd)"
-			if [[ -z "$1" ]]; then
-				SRC="$(pwd)"
-			fi
-			unset prevItem
-		elif [[ -f "$TMENU_RESULT" ]]; then
-			action.file "$TMENU_RESULT"
-		fi
-	done
-	if [[ "$1" == "slDst" ]]; then
-		cd "$SRC"
-	fi
 }
 
 until [[ "$TMENU_RESULT" == "EXIT" ]]; do
