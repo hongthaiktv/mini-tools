@@ -122,7 +122,7 @@ action.dir() {
 		local prevDST="$(basename "$DST")"
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
-	actions+=( "Delete" "Move" "Rename" "New folder" )
+	actions+=( "Delete" "Move" "Rename" "New folder" "New file" )
 	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
@@ -254,6 +254,23 @@ action.dir() {
 			if [[ ! -z "$fName" ]]; then
 				cd "$1"
 				mkdir "$fName"
+				cd "$WDIR"
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"New file")
+			local fName=""
+			read -rep "File name: (cancel) " fName
+			echo
+			eval fName="$fName"
+			if [[ ! -z "$fName" ]]; then
+				cd "$1"
+				touch "$fName"
 				cd "$WDIR"
 			fi
 
