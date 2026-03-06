@@ -19,15 +19,102 @@ ESC_KEY=$'\033'
 ERROR_COLOR=91
 CMD_COLOR=96
 
+tmenu.hashCheck() {
+	declare -a hashMenu
+
+	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
+		clear
+		printf "\033[47m\033[30m HASH check \033[0m\n------------\n\n"
+
+		hashMenu=( "1. SHA1" "2. SHA256" "3. SHA384" "4. SHA512" "5. MD5" "6. Back" )
+
+		tmenu "${hashMenu[@]}"
+
+		case "$TMENU_RESULT" in
+			"1. SHA1")
+				echo === SHA1 ===
+				sha1sum "$1"
+				echo
+				read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+				echo
+				echo
+				if [[ "$key" == "$ESC_KEY" ]]; then
+					exit
+				fi
+				;;
+
+			"2. SHA256")
+				echo === SHA256 ===
+				sha256sum "$1"
+				echo
+				read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+				echo
+				echo
+				if [[ "$key" == "$ESC_KEY" ]]; then
+					exit
+				fi
+				;;
+			
+			"3. SHA384")
+				echo === SHA384 ===
+				sha384sum "$1"
+				echo
+				read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+				echo
+				echo
+				if [[ "$key" == "$ESC_KEY" ]]; then
+					exit
+				fi
+				;;
+			
+			"4. SHA512")
+				echo === SHA512 ===
+				sha512sum "$1"
+				echo
+				read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+				echo
+				echo
+				if [[ "$key" == "$ESC_KEY" ]]; then
+					exit
+				fi
+				;;
+			
+			"5. MD5")
+				echo === MD5 ===
+				md5sum "$1"
+				echo
+				read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+				echo
+				echo
+				if [[ "$key" == "$ESC_KEY" ]]; then
+					exit
+				fi
+				;;
+
+			"6. Back" | "0" | "$ESC_KEY")
+				unset TMENU_RESULT
+				break
+				;;
+		esac
+	done
+}
+
 if [[ ! -z "$1" ]]; then
 	while IFS= read -r line; do
-		if [[ -z "$TCMD_DST" ]]; then
-			TCMD_DST="$line"
-		else TCMD_SRC="$line"
+		if [[ -z "$TCMD_SRC" ]]; then
+			TCMD_SRC="$line"
+		elif [[ -z "$TCMD_DST" ]]; then
+			TCMD_DST="${line:0:-1}"
+			DST="${line:0:-1}"
+		else TCMD_ACT="$line"
 		fi
 	done < "$1"
 	unset IFS
 	echo "$(date +"%x %X") :: $TCMD_SRC" >> ~/.tfe_history
+
+	if [[ "$TCMD_ACT" == "hash" ]]; then
+		tmenu.hashCheck "$TCMD_SRC"
+	fi
 fi
 
 runCmd() {
@@ -42,7 +129,7 @@ action.dir() {
 	echo "----------------"
 	echo
 
-	local actions=( "Copy to TCMD" "Copy" )
+	local actions=( "Copy" )
 	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
 		actions+=( "Copy to \"$prevDST\"" )
@@ -51,26 +138,15 @@ action.dir() {
 	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
-	actions+=( "Zip" "Zip to TCMD" "Detail" )
+	actions+=( "Zip" )
+	if [[ ! -z "$DST" ]]; then
+		actions+=( "Zip to \"$prevDST\"" )
+	fi
+	actions+=( "Detail" )
 
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
-		"Copy to TCMD")
-			if [[ -z "$TCMD_DST" ]]; then
-				read -rep "Destination: (cancel) " TCMD_DST
-				echo
-				eval TCMD_DST="$TCMD_DST"
-			fi
-			if [[ ! -z "$TCMD_DST" ]]; then
-				cp -rf "./$1" "$TCMD_DST"
-			fi
-			if [[ $? -ne 0 ]]; then
-				echo
-				read -rsn1 -p "Press any key to continue..." key
-			fi
-			;;
-
 		"Copy")
 			tmenu.fileExplorer "slDst"
 			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
@@ -240,14 +316,12 @@ action.dir() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"Zip to TCMD")
-			local zDst
-			if [[ -z "$TCMD_DST" ]]; then
-				read -rep "Directory Path: " TCMD_DST
+		"Zip to \"$prevDST\"")
+			local aName="$1"
+			if [[ "$aName" == "." ]]; then
+				aName="$(basename "$WDIR")"
 			fi
-			read -rep "Archive name: " zDst
-			eval zDst="$TCMD_DST$zDst"
-			7zz a -snl "$zDst" "$1"
+			7zz a -snl "$DST/$aName.zip" "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -271,12 +345,12 @@ action.file() {
 	echo "-----------"
 	echo
 
-	actions=( "Copy to TCMD" "Copy" )
+	actions=( "Copy" )
 	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
-	actions+=( "Delete" "Move" "Rename" "Edit" )
+	actions+=( "Delete" "Move" "Rename" "Edit" "Hash check" )
 	if [[ -x "$1" ]]; then
 		actions+=( "Run" )
 	fi
@@ -314,21 +388,6 @@ action.file() {
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
-		"Copy to TCMD")
-			if [[ -z "$TCMD_DST" ]]; then
-				read -rep "Destination: (cancel) " TCMD_DST
-				echo
-				eval TCMD_DST="$TCMD_DST"
-			fi
-			if [[ ! -z "$TCMD_DST" ]]; then
-				cp -f "./$1" "$TCMD_DST"
-			fi
-			if [[ $? -ne 0 ]]; then
-				echo
-				read -rsn1 -p "Press any key to continue..." key
-			fi
-			;;
-
 		"Copy")
 			local cDST=""
 			tmenu.fileExplorer "slDst"
@@ -410,6 +469,10 @@ action.file() {
 
 		"Edit")
 			vim "$1"
+			;;
+
+		"Hash check")
+			tmenu.hashCheck "$1"
 			;;
 
 		"Run")
@@ -571,99 +634,12 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. HASH check" "3. Backup document" "4. Backup Vim" "5. Vim" "6. History" "7. Exit"
+	tmenu "1. File explorer" "2. Backup document" "3. Backup Vim" "4. Vim" "5. History" "6. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
 
-		"2. HASH check")
-			if [[ -z "$TCMD_SRC" ]]; then
-				read -rep "File path: " TCMD_SRC
-				eval TCMD_SRC="$TCMD_SRC"
-			fi
-
-			until [[ "$TMENU_RESULT" == "EXIT" ]]; do
-				clear
-				echo "HASH check"
-				echo "----------"
-				echo
-				tmenu "1. SHA1" "2. SHA256" "3. SHA384" "4. SHA512" "5. MD5" "6. Back"
-
-				case "$TMENU_RESULT" in
-					"1. SHA1")
-						echo === SHA1 ===
-						sha1sum "$TCMD_SRC"
-						echo
-						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
-						echo
-						echo
-						if [[ "$key" == "$ESC_KEY" ]]; then
-							exit
-						fi
-						;;
-
-					"2. SHA256")
-						echo === SHA256 ===
-						sha256sum "$TCMD_SRC"
-						echo
-						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
-						echo
-						echo
-						if [[ "$key" == "$ESC_KEY" ]]; then
-							exit
-						fi
-						;;
-					
-					"3. SHA384")
-						echo === SHA384 ===
-						sha384sum "$TCMD_SRC"
-						echo
-						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
-						echo
-						echo
-						if [[ "$key" == "$ESC_KEY" ]]; then
-							exit
-						fi
-						;;
-					
-					"4. SHA512")
-						echo === SHA512 ===
-						sha512sum "$TCMD_SRC"
-						echo
-						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
-						echo
-						echo
-						if [[ "$key" == "$ESC_KEY" ]]; then
-							exit
-						fi
-						;;
-					
-					"5. MD5")
-						echo === MD5 ===
-						md5sum "$TCMD_SRC"
-						echo
-						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
-						echo
-						echo
-						if [[ "$key" == "$ESC_KEY" ]]; then
-							exit
-						fi
-						;;
-
-					"6. Back" | "$ESC_KEY")
-						unset TMENU_RESULT
-						break
-						;;
-
-					"0" | "$ESC_KEY")
-						unset TMENU_RESULT
-						break
-						;;
-				esac
-			done
-			;;
-
-		"3. Backup document")
+		"2. Backup document")
 			cd "$HOME/docs"
 			git add .
 			git commit -m "update"
@@ -678,7 +654,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			fi
 			;;
 
-		"4. Backup Vim")
+		"3. Backup Vim")
 			TFE_ERR=()
 			rm -rf "$TMPDIR/vim" 2> /dev/null
 			runCmd "mkdir -p '$TMPDIR/vim/.config/coc' '$TMPDIR/vim/.vim/plugged/coc.nvim/plugin' '$TMPDIR/vim/bin'"
@@ -720,15 +696,15 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"5. Vim") vim ;;
+		"4. Vim") vim ;;
 
-		"6. History")
+		"5. History")
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"7. Exit" | "0" | "$ESC_KEY") exit ;;
+		"6. Exit" | "0" | "$ESC_KEY") exit ;;
 	esac
 done
 
