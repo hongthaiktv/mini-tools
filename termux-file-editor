@@ -99,24 +99,6 @@ tmenu.hashCheck() {
 	done
 }
 
-if [[ ! -z "$1" ]]; then
-	while IFS= read -r line; do
-		if [[ -z "$TCMD_SRC" ]]; then
-			TCMD_SRC="$line"
-		elif [[ -z "$TCMD_DST" ]]; then
-			TCMD_DST="${line:0:-1}"
-			DST="${line:0:-1}"
-		else TCMD_ACT="$line"
-		fi
-	done < "$1"
-	unset IFS
-	echo "$(date +"%x %X") :: $TCMD_SRC" >> ~/.tfe_history
-
-	if [[ "$TCMD_ACT" == "hash" ]]; then
-		tmenu.hashCheck "$TCMD_SRC"
-	fi
-fi
-
 runCmd() {
 	eval "$1"
 	if [[ $? != 0 ]]; then
@@ -624,6 +606,27 @@ tmenu.fileExplorer() {
 		cd "$SRC"
 	fi
 }
+
+# Starting Point (main)
+if [[ ! -z "$1" ]]; then
+	while IFS= read -r line; do
+		if [[ -z "$TCMD_SRC" ]]; then
+			TCMD_SRC="$line"
+		elif [[ -z "$TCMD_DST" ]]; then
+			TCMD_DST="${line:0:-1}"
+			DST="${line:0:-1}"
+		else TCMD_ACT="$line"
+		fi
+	done < "$1"
+	unset IFS
+	echo "$(date +"%x %X") :: $TCMD_SRC" >> ~/.tfe_history
+
+	case "$TCMD_ACT" in
+		"hash") tmenu.hashCheck "$TCMD_SRC" ;;
+
+		"explorer") tmenu.fileExplorer ;;
+	esac
+fi
 
 until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	clear
