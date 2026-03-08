@@ -627,6 +627,7 @@ tmenu.parseTCMD() {
 		"explorer")
 			local srcPath=${TCMD_SRC%/*}
 			cd "$srcPath"
+			WDIR="$srcPath"
 			tmenu.fileExplorer
 			;;
 	esac
