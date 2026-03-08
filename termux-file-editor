@@ -607,15 +607,15 @@ tmenu.fileExplorer() {
 	fi
 }
 
-# Starting Point (main)
-if [[ ! -z "$1" ]]; then
+tmenu.parseTCMD() {
 	while IFS= read -r line; do
 		if [[ -z "$TCMD_SRC" ]]; then
 			TCMD_SRC="$line"
 		elif [[ -z "$TCMD_DST" ]]; then
 			TCMD_DST="${line:0:-1}"
 			DST="${line:0:-1}"
-		else TCMD_ACT="$line"
+		elif [[ -z "$TCMD_ACT" ]]; then
+			TCMD_ACT="$line"
 		fi
 	done < "$1"
 	unset IFS
@@ -624,8 +624,17 @@ if [[ ! -z "$1" ]]; then
 	case "$TCMD_ACT" in
 		"hash") tmenu.hashCheck "$TCMD_SRC" ;;
 
-		"explorer") tmenu.fileExplorer ;;
+		"explorer")
+			local srcPath=${TCMD_SRC%/*}
+			cd "$srcPath"
+			tmenu.fileExplorer
+			;;
 	esac
+}
+
+# Starting Point (main)
+if [[ ! -z "$1" ]]; then
+	tmenu.parseTCMD "$1"
 fi
 
 until [[ "$TMENU_RESULT" == "EXIT" ]]; do
