@@ -266,7 +266,7 @@ action.dir() {
 		"Git")
 			local cMsg=""
 			cd "$1"
-			read -rn1 -p "(p)ull/(P)ush? " key
+			read -rn1 -p "(p)ull|(P)ush|(c)heckout? (push) " key
 			echo
 
 			if [[ -z "$key" || "$key" == "P" ]]; then
@@ -284,6 +284,14 @@ action.dir() {
 				git pull
 				echo
 				read -rsn1 -p "Press any key to continue..." key
+			elif [[ "$key" == "c" ]]; then
+				read -rep "Branch|File name: (cancel) " check
+				echo
+				if [[ ! -z "$check" ]]; then
+					git checkout "$check"
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
 			fi
 
 			cd "$WDIR"
@@ -291,9 +299,21 @@ action.dir() {
 
 		"Zip")
 			local zDst
-			read -rep "Archive name: " zDst
-			eval zDst="$zDst"
-			7zz a -snl "$zDst" "$1"
+			local zName="$1.zip"
+			if [[ "$1" == "." ]]; then
+				zName="${WDIR##*/}.zip"
+			fi
+			echo "Create archive \"$zName\"?"
+			read -rn1 -p "(p)ath|(c)ancel: (ok) " key
+			if [[ -z "$key" ]]; then
+				7zz a -snl "$zName" "$1"
+			elif [[ "$key" == "p" ]]; then
+				echo
+				read -rep "Archive path/name: " zDst
+				eval zDst="$zDst"
+				7zz a -snl "$zDst" "$1"
+			else return
+			fi
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -333,6 +353,9 @@ action.file() {
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
 	actions+=( "Delete" "Move" "Rename" "Edit" "Hash check" )
+	if [[ -d ".git" ]]; then
+		actions+=( "Git checkout" )
+	fi
 	if [[ -x "$1" ]]; then
 		actions+=( "Run" )
 	fi
@@ -457,6 +480,14 @@ action.file() {
 			tmenu.hashCheck "$1"
 			;;
 
+		"Git checkout")
+			read -rn1 -p "Recover \"$1\"? (cancel) " key
+			echo
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				git checkout "$1"
+			fi
+			;;
+
 		"Run")
 			"./$1"
 			;;
@@ -542,9 +573,9 @@ tmenu.fileExplorer() {
 		local checkPrev=0
 
 		if [[ -z "$1" ]]; then
-			title="\033[47m\033[30m File explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
+			title="\033[44m File explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "slDst" ]]; then
-			title="\033[44m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+			title="\033[47m\033[30m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		fi
 
 		for file in *; do
@@ -647,7 +678,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. Backup document" "3. Backup Vim" "4. Vim" "5. History" "6. Exit"
+	tmenu "1. File explorer" "2. Backup document" "3. Backup Vim" "4. Vim" "5. Puppet" "6. History" "7. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
@@ -711,13 +742,23 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 
 		"4. Vim") vim ;;
 
-		"5. History")
+		"5. Puppet")
+			cd "/data/data/com.termux/files/home/dev/nodejs/localhost"
+			PUPPET=1 node index.js
+			if [[ $? != 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			cd "$WDIR"
+			;;
+
+		"6. History")
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"6. Exit" | "0" | "$ESC_KEY") exit ;;
+		"7. Exit" | "0" | "$ESC_KEY") exit ;;
 	esac
 done
 
