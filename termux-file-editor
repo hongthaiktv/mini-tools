@@ -491,8 +491,7 @@ action.file() {
 			;;
 
 		"Git checkout")
-			echo "Recover \"$1\"?"
-			read -rn1 -p "(y)es|(n)o: " key
+			read -rn1 -p "Recover \"$1\"? (y/n) " key
 			echo
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
 				git checkout "$1"
