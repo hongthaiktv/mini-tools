@@ -343,6 +343,8 @@ action.dir() {
 
 action.file() {
 	declare -a actions
+	local dir="$WDIR"
+
 	echo "File Action"
 	echo "-----------"
 	echo
@@ -353,9 +355,17 @@ action.file() {
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
 	actions+=( "Delete" "Move" "Rename" "Edit" "Hash check" )
-	if [[ -d ".git" ]]; then
-		actions+=( "Git checkout" )
-	fi
+	while [[ ! -z "$dir" ]]; do
+		if [[ -r "$dir" ]]; then
+			if [[ -d "$dir/.git" ]]; then
+				actions+=( "Git checkout" )
+				break
+			else
+				dir="${dir%/*}"
+			fi
+		else break
+		fi
+	done
 	if [[ -x "$1" ]]; then
 		actions+=( "Run" )
 	fi
@@ -481,7 +491,8 @@ action.file() {
 			;;
 
 		"Git checkout")
-			read -rn1 -p "Recover \"$1\"? (cancel) " key
+			echo "Recover \"$1\"?"
+			read -rn1 -p "(y)es|(n)o: " key
 			echo
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
 				git checkout "$1"
