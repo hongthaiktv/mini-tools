@@ -694,11 +694,20 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		"1. File explorer") tmenu.fileExplorer ;;
 
 		"2. Backup document")
-			cd "$HOME/docs"
-			git add .
-			git commit -m "update"
-			git push
+			cd "/storage/emulated/0/Documents/"
+			read -rn1 -p "(p)ull|(P)ush? (push) " key
+			echo
+
+			if [[ -z "$key" || "$key" == "P" ]]; then
+				git add .
+				git commit -m "update"
+				git push
+			elif [[ "$key" == "p" ]]; then
+				echo
+				git pull
+			fi
 			cd "$WDIR"
+
 			echo
 			read -rsn1 -p "Press ESC to exit, other keys to continue..." key
 			echo
