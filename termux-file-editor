@@ -688,7 +688,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. Backup document" "3. Backup Vim" "4. Backup snippets" "5. Vim" "6. Puppet" "7. History" "8. Exit"
+	tmenu "1. File explorer" "2. Backup document" "3. Backup snippets" "4. Backup Vim" "5. Vim" "6. Puppet" "7. History" "8. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
@@ -717,7 +717,31 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			fi
 			;;
 
-		"3. Backup Vim")
+		"3. Backup snippets")
+			cd "$HOME/.config/coc/ultisnips"
+			read -rn1 -p "(p)ull|(P)ush? (push) " key
+			echo
+
+			if [[ -z "$key" || "$key" == "P" ]]; then
+				git add .
+				git commit -m "update"
+				git push
+			elif [[ "$key" == "p" ]]; then
+				echo
+				git pull
+			fi
+			cd "$WDIR"
+
+			echo
+			read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+			echo
+			echo
+			if [[ "$key" == "$ESC_KEY" ]]; then
+				exit
+			fi
+			;;
+
+		"4. Backup Vim")
 			TFE_ERR=()
 			rm -rf "$TMPDIR/vim" 2> /dev/null
 			runCmd "mkdir -p '$TMPDIR/vim/.config/coc' '$TMPDIR/vim/.vim/plugged/coc.nvim/plugin' '$TMPDIR/vim/bin'"
@@ -757,30 +781,6 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			fi
 			echo
 			read -rsn1 -p "Press any key to continue..." key
-			;;
-
-		"4. Backup snippets")
-			cd "$HOME/.config/coc/ultisnips"
-			read -rn1 -p "(p)ull|(P)ush? (push) " key
-			echo
-
-			if [[ -z "$key" || "$key" == "P" ]]; then
-				git add .
-				git commit -m "update"
-				git push
-			elif [[ "$key" == "p" ]]; then
-				echo
-				git pull
-			fi
-			cd "$WDIR"
-
-			echo
-			read -rsn1 -p "Press ESC to exit, other keys to continue..." key
-			echo
-			echo
-			if [[ "$key" == "$ESC_KEY" ]]; then
-				exit
-			fi
 			;;
 
 		"5. Vim") vim ;;
