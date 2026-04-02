@@ -688,7 +688,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. Backup document" "3. Backup snippets" "4. Backup Vim" "5. Vim" "6. Puppet" "7. History" "8. Exit"
+	tmenu "1. File explorer" "2. Backup document" "3. Backup snippets" "4. Backup Vim" "5. Vim" "6. Puppet" "7. Sync all" "8. History" "9. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
@@ -795,13 +795,50 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			cd "$WDIR"
 			;;
 
-		"7. History")
+		"7. Sync all")
+			cd "/storage/emulated/0/Documents/"
+			git pull
+			cd "$HOME/.config/coc/ultisnips"
+			git pull
+			cd "$HOME/dev/nodejs/localhost"
+			git pull
+			cd "$HOME/bin"
+			git pull
+			echo
+			repos=( "$HOME/dev/nodejs/localhost" "$HOME/bin" )
+			for repo in "${repos[@]}"; do
+				cd "$repo"
+				repoName="${repo##*/}"
+				read -rn1 -p "Push \"$repoName\"? (y/N): " key
+				echo
+				if [[ "$key" == "y" || "$key" == "Y" ]]; then
+					read -rep "Message: (cancel) " cMsg
+					echo
+					if [[ ! -z "$cMsg" ]]; then
+						git add .
+						git commit -m "$cMsg"
+						git push
+						echo
+						read -rsn1 -p "Press ESC to exit, other keys to continue..." key
+						echo
+						echo
+						if [[ "$key" == "$ESC_KEY" ]]; then
+							cd "$WDIR"
+							exit
+						fi
+					fi
+				fi
+			done
+			cd "$WDIR"
+			;;
+
+		"8. History")
 			cat ~/.tfe_history
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"8. Exit" | "0" | "$ESC_KEY") exit ;;
+		"9. Exit" | "0" | "$ESC_KEY") exit ;;
 	esac
 done
 
