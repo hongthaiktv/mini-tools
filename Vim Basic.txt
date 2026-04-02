@@ -433,7 +433,7 @@ Plugins
 		:CocInstall ext_name	install extension
 		:CocUninstall ext_name	uninstall extension
 		:CocUpdate				update extensions
-		:CocList extensions		list extensions and status
+		:CocList extensions		list extensions and status (hit <Tab> to activate action menu)
 		:CocList snippets		list snippets of current file type
 		:CocCommand snippets.editSnippets			edit snippet for current file type in ~/.config/coc/ultisnips
 		:CocCommand snippets.openSnippetFiles		choose snippet file to open by current file type
