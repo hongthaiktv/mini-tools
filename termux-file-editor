@@ -786,7 +786,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		"5. Vim") vim ;;
 
 		"6. Puppet")
-			cd "/data/data/com.termux/files/home/dev/nodejs/localhost"
+			cd "/data/data/com.termux/files/home/dev/nodejs/message_spreader"
 			PUPPET=1 node index.js
 			if [[ $? != 0 ]]; then
 				echo
@@ -796,7 +796,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			;;
 
 		"7. Sync all")
-			repos=( "/storage/emulated/0/Documents" "$HOME/.config/coc/ultisnips" "$HOME/dev/nodejs/localhost" "$HOME/bin" "/storage/emulated/0/AppProjects/android_local" )
+			repos=( "/storage/emulated/0/Documents" "$HOME/.config/coc/ultisnips" "$HOME/dev/nodejs/message_spreader" "$HOME/bin" "/storage/emulated/0/AppProjects/android_local" )
 			for repo in "${repos[@]}"; do
 				cd "$repo"
 				repoName="${repo##*/}"
