@@ -120,6 +120,7 @@ action.dir() {
 	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
+	actions+=( "Magick" )
 	actions+=( "Zip" )
 	if [[ ! -z "$DST" ]]; then
 		actions+=( "Zip to \"$prevDST\"" )
@@ -297,6 +298,39 @@ action.dir() {
 			cd "$WDIR"
 			;;
 
+		"Magick")
+			local zDst
+			local pDir=".."
+			local zName="$1"
+			if [[ "$1" == "." ]]; then
+				zName="${WDIR##*/}"
+				pDir="."
+			fi
+			echo "Resample *.jpg and create archive \"${zName}.zip\"?"
+			read -rn1 -p "(p)ath|(c)ancel: (ok) " key
+			if [[ -z "$key" ]]; then
+				mkdir "$1/$zName"
+				magick mogrify -path "$1/$zName" -resample 10% "$1/*.jpg"
+				cd "$1"
+				7zz a -snl "$pDir/${zName}.zip" "$zName/."
+				rm -rf "$zName"
+				cd "$pDir"
+			elif [[ "$key" == "p" || "$key" == "P" ]]; then
+				echo
+				read -rep "Archive path/name: " zDst
+				eval zDst="$zDst"
+				mkdir "$1/$zName"
+				magick mogrify -path "$1/$zName" -resample 10% "$1/*.jpg"
+				cd "$1"
+				7zz a -snl "$zDst" "$zName/."
+				rm -rf "$zName"
+				cd "$pDir"
+			else return
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
 		"Zip")
 			local zDst
 			local zName="$1.zip"
@@ -307,7 +341,7 @@ action.dir() {
 			read -rn1 -p "(p)ath|(c)ancel: (ok) " key
 			if [[ -z "$key" ]]; then
 				7zz a -snl "$zName" "$1"
-			elif [[ "$key" == "p" ]]; then
+			elif [[ "$key" == "p" || "$key" == "P" ]]; then
 				echo
 				read -rep "Archive path/name: " zDst
 				eval zDst="$zDst"
