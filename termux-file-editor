@@ -315,6 +315,11 @@ action.dir() {
 				7zz a -snl "$pDir/${zName}.zip" "$zName/."
 				rm -rf "$zName"
 				cd "$pDir"
+				echo
+				read -rn1 -p "Move zipped to \"Upload\"? (ok) " key
+				if [[ -z "$key" ]]; then
+					mv "${zName}.zip" "/storage/emulated/0/Upload"
+				fi
 			elif [[ "$key" == "p" || "$key" == "P" ]]; then
 				echo
 				read -rep "Archive path/name: " zDst
@@ -322,8 +327,19 @@ action.dir() {
 				mkdir "$1/$zName"
 				magick mogrify -path "$1/$zName" -resample 10% "$1/*.jpg"
 				cd "$1"
-				7zz a -snl "$zDst" "$zName/."
+				if [[ "$zDst" != *"/"* || "$zDst" == "./"* || "$zDst" == "../"* ]]; then
+					7zz a -snl "$pDir/$zDst" "$zName/."
+				else 7zz a -snl "$zDst" "$zName/."
+				fi
 				rm -rf "$zName"
+				echo
+				read -rn1 -p "Move zipped to \"Upload\"? (ok) " key
+				if [[ -z "$key" ]]; then
+					if [[ "$zDst" != *"/"* || "$zDst" == "./"* || "$zDst" == "../"* ]]; then
+						mv "$pDir/$zDst" "/storage/emulated/0/Upload"
+					else mv "$zDst" "/storage/emulated/0/Upload"
+					fi
+				fi
 				cd "$pDir"
 			else return
 			fi
