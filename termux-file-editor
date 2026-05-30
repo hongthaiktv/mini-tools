@@ -121,6 +121,9 @@ action.dir() {
 		actions+=( "Git" )
 	fi
 	actions+=( "Magick" )
+	if [[ -f "$1/package.json" ]]; then
+		actions+=( "Install Node.js" )
+	fi
 	actions+=( "Zip" )
 	if [[ ! -z "$DST" ]]; then
 		actions+=( "Zip to \"$prevDST\"" )
@@ -343,6 +346,14 @@ action.dir() {
 				cd "$pDir"
 			else return
 			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Install Node.js")
+			cd "$1"
+			npm install
+			cd "$WDIR"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
