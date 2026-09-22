@@ -120,6 +120,14 @@ action.dir() {
 	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
+
+	for file in "$1"/*.deb; do
+		if [[ -f "$file" ]]; then
+			actions+=( "Install all" )
+			break
+		fi
+	done
+
 	actions+=( "Magick" )
 	if [[ -f "$1/package.json" ]]; then
 		actions+=( "Install Node.js" )
@@ -301,6 +309,10 @@ action.dir() {
 			cd "$WDIR"
 			;;
 
+		"Install all")
+			dpkg -i *.deb
+			;;
+
 		"Magick")
 			local zDst
 			local pDir=".."
@@ -427,11 +439,16 @@ action.file() {
 		else break
 		fi
 	done
+
 	if [[ -x "$1" ]]; then
 		actions+=( "Run" )
 	fi
 
 	case "$1" in
+		*".deb")
+			actions+=( "Install" )
+			;;
+
 		*".zip"|*".7z"|*".gz"|*".xz"|*".tar"|*".rar")
 			actions+=( "Extract" )
 			;;
@@ -561,6 +578,10 @@ action.file() {
 
 		"Run")
 			"./$1"
+			;;
+
+		"Install")
+			dpkg -i $1
 			;;
 
 		"Extract")
