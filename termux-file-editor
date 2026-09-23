@@ -290,7 +290,7 @@ action.dir() {
 
 		"Create checksums")
 			rm -f checksums.sha256 2> /dev/null
-			find "$1" -mindepth 1 -type f ! -name 'checksums.sha256' -exec sha256sum '{}' >> checksums.sha256 \;
+			find "$1" -mindepth 1 -name '.git' -prune -o -name 'node_modules' -prune -o -name 'build' -prune -o \( -type f -a ! -name 'checksums.sha256' \) -exec sha256sum '{}' >> checksums.sha256 \;
 			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
