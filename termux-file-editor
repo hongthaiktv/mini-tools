@@ -123,10 +123,12 @@ action.dir() {
 
 	for file in "$1"/*.deb; do
 		if [[ -f "$file" ]]; then
-			actions+=( "Install all" )
+			actions+=( "Install" )
 			break
 		fi
 	done
+
+	actions+=( "Install all" )
 
 	actions+=( "Magick" )
 	if [[ -f "$1/package.json" ]]; then
@@ -309,8 +311,12 @@ action.dir() {
 			cd "$WDIR"
 			;;
 
-		"Install all")
+		"Install")
 			dpkg -i *.deb
+			;;
+
+		"Install all")
+			dpkg -i -R *
 			;;
 
 		"Magick")
