@@ -124,6 +124,10 @@ action.dir() {
 
 	actions+=( "Delete" "Move" "Rename" "New folder" "New file" "Create checksums" )
 
+	if [[ -f "$1/checksums.sha256" ]]; then
+		actions+=( "Checksums" )
+	fi
+
 	if [[ -d "$1/.git" ]]; then
 		actions+=( "Git" )
 	fi
@@ -292,6 +296,16 @@ action.dir() {
 				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
+
+		"Checksums")
+			sha256sum -c "checksums.sha256" 1> /dev/null
+			if [[ $? -eq 0 ]]; then
+				echo "All files checked OK."
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
 		"Git")
 			local cMsg=""
 			cd "$1"
@@ -449,6 +463,11 @@ action.file() {
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
 	actions+=( "Delete" "Move" "Rename" "Edit" "Hash check" )
+
+	if [[ "$1" == "checksums.sha256" ]]; then
+		actions+=( "Checksums" )
+	fi
+
 	while [[ ! -z "$dir" ]]; do
 		if [[ -r "$dir" ]]; then
 			if [[ -d "$dir/.git" ]]; then
@@ -587,6 +606,15 @@ action.file() {
 
 		"Hash check")
 			tmenu.hashCheck "$1"
+			;;
+
+		"Checksums")
+			sha256sum -c "checksums.sha256" 1> /dev/null
+			if [[ $? -eq 0 ]]; then
+				echo "All files checked OK."
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 			;;
 
 		"Git checkout")
