@@ -126,14 +126,20 @@ action.dir() {
 	echo "----------------"
 	echo
 
-	local actions=( "Copy" )
+	declare -a actions
 
 	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
 
-	actions+=( "Delete" "Move" "Rename" "New folder" "New file" "Create checksums" )
+	actions+=( "Copy" )
+
+	if [[ ! -z "$DST" ]]; then
+		actions+=( "Move to \"$prevDST\"" )
+	fi
+
+	actions+=( "Move" "Delete" "Rename" "New folder" "New file" "Create checksums" )
 
 	if [[ -f "$1/checksums.sha256" ]]; then
 		actions+=( "Checksums" )
@@ -168,6 +174,14 @@ action.dir() {
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
+		"Copy to \"$prevDST\"")
+			cp -rf "./$1" "$DST"
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
 		"Copy")
 			tmenu.fileExplorer "slDst"
 			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
@@ -188,8 +202,43 @@ action.dir() {
 			fi
 			;;
 
-		"Copy to \"$prevDST\"")
-			cp -rf "./$1" "$DST"
+		"Move to \"$prevDST\"")
+			if [[ "$1" == "." ]]; then
+				local currentDir="$(basename "$WDIR")"
+				cd ..
+				WDIR="$(pwd)"
+				mv "$currentDir" "$DST"
+			else
+				mv "./$1" "$DST"
+			fi
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Move")
+			tmenu.fileExplorer "slDst"
+			local mDST=""
+			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+				read -rep "Destination: (cancel) " iDST
+				echo
+				eval iDST="$iDST"
+				if [[ ! -z "$iDST" ]]; then
+					mDST="$iDST"
+				fi
+			else
+				mDST="$DST"
+			fi
+			if [[ "$1" == "." ]]; then
+				local currentDir="$(basename "$WDIR")"
+				cd ..
+				WDIR="$(pwd)"
+				mv "$currentDir" "$mDST"
+			else
+				mv "./$1" "$mDST"
+			fi
+
 			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -230,26 +279,6 @@ action.dir() {
 				if [[ "$dotOpt" == "u" ]]; then
 					shopt -u dotglob
 				fi
-			fi
-			;;
-
-		"Move")
-			tmenu.fileExplorer "slDst"
-			if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
-				local mDST=""
-				read -rep "Destination: (cancel) " mDST
-				echo
-				eval mDST="$mDST"
-				if [[ ! -z "$mDST" ]]; then
-					mv "./$1" "$mDST"
-				fi
-			else
-				mv "./$1" "$DST"
-			fi
-
-			if [[ $? -ne 0 ]]; then
-				echo
-				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
@@ -483,12 +512,18 @@ action.file() {
 	echo "-----------"
 	echo
 
-	actions=( "Copy" )
 	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
 		actions+=( "Copy to \"$prevDST\"" )
 	fi
-	actions+=( "Delete" "Move" "Rename" "Edit" "Hash check" )
+
+	actions+=( "Copy" )
+
+	if [[ ! -z "$DST" ]]; then
+		actions+=( "Move to \"$prevDST\"" )
+	fi
+
+	actions+=( "Move" "Delete" "Rename" "Edit" "Hash check" )
 
 	if [[ "$1" == "checksums.sha256" ]]; then
 		actions+=( "Checksums" )
@@ -547,6 +582,14 @@ action.file() {
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
+		"Copy to \"$prevDST\"")
+			cp -f "./$1" "$DST"
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
 		"Copy")
 			local cDST=""
 			tmenu.fileExplorer "slDst"
@@ -567,27 +610,11 @@ action.file() {
 			fi
 			;;
 
-		"Copy to \"$prevDST\"")
-			cp -f "./$1" "$DST"
+		"Move to \"$prevDST\"")
+			mv "./$1" "$DST"
 			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
-			fi
-			;;
-
-		"Delete")
-			local msg="Delete \"$1\"? (y/N): "
-			read -rn1 -p "$msg" key
-			echo
-			echo
-
-			if [[ "$key" == "y" || "$key" == "Y" ]]; then
-				rm -f "./$1"
-				if [[ "$?" != 0 ]]; then
-					echo
-					read -rsn1 -p "Press any key to continue..." key
-				else unset prevItem
-				fi
 			fi
 			;;
 
@@ -608,6 +635,22 @@ action.file() {
 			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Delete")
+			local msg="Delete \"$1\"? (y/N): "
+			read -rn1 -p "$msg" key
+			echo
+			echo
+
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				rm -f "./$1"
+				if [[ "$?" != 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else unset prevItem
+				fi
 			fi
 			;;
 
@@ -804,6 +847,7 @@ tmenu.fileExplorer() {
 	done
 	if [[ "$1" == "slDst" ]]; then
 		cd "$SRC"
+		WDIR="$SRC"
 	fi
 }
 
@@ -910,6 +954,9 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			runCmd "7zz a -snl -y '/storage/emulated/0/Backup/Apps/vim.zip' '$TMPDIR/vim/.' '$HOME/.termux' '$HOME/.vimrc' '$HOME/.gitconfig' '$HOME/nodemon.json' '$HOME/.bashrc'"
 			runCmd "cp -rf '/storage/emulated/0/Backup/Apps/vim.zip' '$HOME/bin'"
 			runCmd "rm -rf '$TMPDIR/vim'"
+			runCmd "rm -f '$HOME/bin/checksums.sha256' 2> /dev/null"
+			runCmd "find '$HOME/bin' -mindepth 1 -name '.git' -prune -o -name 'node_modules' -prune -o -name 'build' -prune -o \( -type f -a ! -name 'checksums.sha256' \) -exec sha256sum '{}' >> '$HOME/bin/checksums.sha256' \;"
+
 			echo
 			printf ">>>>>>>>>> \033[44m %s \033[0m <<<<<<<<<<\n" "Git Push Update"
 			echo

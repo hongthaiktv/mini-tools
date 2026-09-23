@@ -1,7 +1,7 @@
-12e12832d790a6e013d1b3cfa8a9415147c9eda2d2564330f1cf25bc173d29d6  ./README.md
-43090cfbd6d5f3bc430111a7ee951a1ec0ea7a4903fd9b4b6b35153b2fdc6259  ./Vim Basic.txt
-58045c05359813c2d393e621c6f1a5a057df1e3dae4d2ac85d518ac1d0ec2d39  ./termux-file-editor
-72fd7f48855fb4eca982c7773711f8d89fcc8cb3e1c85b957efaa0befec13a91  ./test.sh
-30d8c15c2a7c6ceef8e1196622eeed133a5e16a91980c41d6e9ce37934f94dde  ./tmenu.sh
-a4e3e35fd8c2a5efb235fabafd28bd18b263f42806f40e0f3835e011e1a77d89  ./tmenu_example.sh
-2ddc1320ff384760c088ea62aa82a13ab08f4332451abcd2b22444048501586a  ./vim.zip
+12e12832d790a6e013d1b3cfa8a9415147c9eda2d2564330f1cf25bc173d29d6  /data/data/com.termux/files/home/bin/README.md
+43090cfbd6d5f3bc430111a7ee951a1ec0ea7a4903fd9b4b6b35153b2fdc6259  /data/data/com.termux/files/home/bin/Vim Basic.txt
+f3d1dd2f320d6717b365a4d8a897e53342bc72f9d97c322a3a83ae419d144f5d  /data/data/com.termux/files/home/bin/termux-file-editor
+72fd7f48855fb4eca982c7773711f8d89fcc8cb3e1c85b957efaa0befec13a91  /data/data/com.termux/files/home/bin/test.sh
+30d8c15c2a7c6ceef8e1196622eeed133a5e16a91980c41d6e9ce37934f94dde  /data/data/com.termux/files/home/bin/tmenu.sh
+a4e3e35fd8c2a5efb235fabafd28bd18b263f42806f40e0f3835e011e1a77d89  /data/data/com.termux/files/home/bin/tmenu_example.sh
+cdc82bde98c04b936fd0466079928520126547c558211ce62a5b14c96a714a8e  /data/data/com.termux/files/home/bin/vim.zip
