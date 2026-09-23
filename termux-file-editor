@@ -110,6 +110,17 @@ list() {
 	ListArray+=( "$1" )
 }
 
+checkAllDir() {
+	local isAllDir=1
+	for file in "$1"/*; do
+		if [[ ! -d "$file" ]]; then
+			isAllDir=0
+			break
+		fi
+	done
+	return $isAllDir
+}
+
 action.dir() {
 	echo "Directory Action"
 	echo "----------------"
@@ -139,7 +150,10 @@ action.dir() {
 		fi
 	done
 
-	actions+=( "Install all" )
+	checkAllDir "$1"
+	if [[ $? -eq 1 ]]; then
+		actions+=( "Install all" )
+	fi
 
 	actions+=( "Magick" )
 	if [[ -f "$1/package.json" ]]; then
@@ -289,21 +303,25 @@ action.dir() {
 			;;
 
 		"Create checksums")
+			cd "$1"
 			rm -f checksums.sha256 2> /dev/null
-			find "$1" -mindepth 1 -name '.git' -prune -o -name 'node_modules' -prune -o -name 'build' -prune -o \( -type f -a ! -name 'checksums.sha256' \) -exec sha256sum '{}' >> checksums.sha256 \;
+			find . -mindepth 1 -name '.git' -prune -o -name 'node_modules' -prune -o -name 'build' -prune -o \( -type f -a ! -name 'checksums.sha256' \) -exec sha256sum '{}' >> checksums.sha256 \;
 			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
+			cd "$WDIR"
 			;;
 
 		"Checksums")
+			cd "$1"
 			sha256sum -c "checksums.sha256" 1> /dev/null
 			if [[ $? -eq 0 ]]; then
 				echo "All files checked OK."
 			fi
 			echo
 			read -rsn1 -p "Press any key to continue..." key
+			cd "$WDIR"
 			;;
 
 		"Git")
@@ -341,11 +359,19 @@ action.dir() {
 			;;
 
 		"Install")
+			cd "$1"
 			dpkg -i *.deb
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			cd "$WDIR"
 			;;
 
 		"Install all")
+			cd "$1"
 			dpkg -i -R *
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			cd "$WDIR"
 			;;
 
 		"Magick")
@@ -631,6 +657,8 @@ action.file() {
 
 		"Install")
 			dpkg -i $1
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 			;;
 
 		"Extract")
