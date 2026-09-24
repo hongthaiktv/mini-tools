@@ -420,9 +420,10 @@ action.dir() {
 			fi
 			echo "Resample *.jpg and create archive \"${zName}.zip\"?"
 			read -rn1 -p "(p)ath|(c)ancel: (ok) " key
+			echo
 			if [[ -z "$key" ]]; then
 				mkdir "$1/$zName"
-				magick mogrify -path "$1/$zName" -resample 10% "$1/*.jpg"
+				magick mogrify -identify -path "$1/$zName" -resample 10% "$1/*.jpg"
 				cd "$1"
 				7zz a -snl "$pDir/${zName}.zip" "$zName/."
 				rm -rf "$zName"
@@ -433,11 +434,11 @@ action.dir() {
 					mv "${zName}.zip" "/storage/emulated/0/Upload"
 				fi
 			elif [[ "$key" == "p" || "$key" == "P" ]]; then
-				echo
 				read -rep "Archive path/name: " zDst
+				echo
 				eval zDst="$zDst"
 				mkdir "$1/$zName"
-				magick mogrify -path "$1/$zName" -resample 10% "$1/*.jpg"
+				magick mogrify -identify -path "$1/$zName" -resample 10% "$1/*.jpg"
 				cd "$1"
 				if [[ "$zDst" != *"/"* || "$zDst" == "./"* || "$zDst" == "../"* ]]; then
 					7zz a -snl "$pDir/$zDst" "$zName/."
