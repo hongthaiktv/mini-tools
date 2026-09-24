@@ -110,15 +110,22 @@ list() {
 	ListArray+=( "$1" )
 }
 
-checkAllDir() {
-	local isAllDir=1
+checkRootDir() {
+	local isRootDir=1
+	local fileCounter=0
 	for file in "$1"/*; do
 		if [[ ! -d "$file" ]]; then
-			isAllDir=0
+			(( ++fileCounter ))
+		fi
+		if [[ ! -d "$file" && "$1/checksums.sha256" != "$file" ]]; then
+			isRootDir=0
 			break
 		fi
 	done
-	return $isAllDir
+	if [[ $fileCounter -eq 0 ]]; then
+		isRootDir=0
+	fi
+	return $isRootDir
 }
 
 action.dir() {
@@ -156,7 +163,7 @@ action.dir() {
 		fi
 	done
 
-	checkAllDir "$1"
+	checkRootDir "$1"
 	if [[ $? -eq 1 ]]; then
 		actions+=( "Install all" )
 	fi
@@ -397,7 +404,7 @@ action.dir() {
 
 		"Install all")
 			cd "$1"
-			dpkg -i -R *
+			dpkg -i -R .
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			cd "$WDIR"
