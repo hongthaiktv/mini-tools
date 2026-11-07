@@ -793,9 +793,11 @@ tmenu.fileExplorer() {
 		local checkPrev=0
 
 		if [[ -z "$1" ]]; then
-			title="\033[44m File explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
+			title="\033[44m File Explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "slDst" ]]; then
 			title="\033[47m\033[30m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+		elif [[ "$1" == "megaSlDst" ]]; then
+			title="\033[47m\033[30m Mega Select Upload \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		fi
 
 		for file in *; do
@@ -835,6 +837,10 @@ tmenu.fileExplorer() {
 				DST="$(pwd)"
 				TMENU_RESULT="$(pwd)"
 				break
+			elif [[ "$1" == "megaSlDst" ]]; then
+				MEGASRC="$MENU_SELECTED"
+				TMENU_RESULT="$MEGASRC"
+				break
 			elif [[ -d "$MENU_SELECTED" ]]; then
 				action.dir "$MENU_SELECTED"
 			elif [[ -f "$MENU_SELECTED" ]]; then
@@ -857,6 +863,132 @@ tmenu.fileExplorer() {
 		cd "$SRC"
 		WDIR="$SRC"
 	fi
+}
+
+action.megaDir() {
+	declare -a actions
+
+	echo "Mega Directory Action"
+	echo "---------------------"
+	echo
+
+	actions+=( "Upload" )
+
+	tmenu "${actions[@]}"
+
+	case "$TMENU_RESULT" in
+		"Upload")
+			tmenu.fileExplorer "megaSlDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-put "$MENU_SELECTED" .
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+	esac
+}
+
+action.megaFile() {
+	declare -a actions
+
+	echo "Mega File Action"
+	echo "----------------"
+	echo
+
+	actions+=( "Mega file act" )
+
+	tmenu "${actions[@]}"
+
+	case "$TMENU_RESULT" in
+		"Mega file act")
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+	esac
+}
+
+tmenu.megaExplorer() {
+	MEGAWDIR="/"
+	MEGASRC="/"
+	MEGADST="/"
+	local title=""
+	local prevItem=""
+
+	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
+		local file_list=( "." ".." )
+		MEGA_FILE_TYPES=( "d" "d" )
+		local checkPrev=0
+
+		if [[ -z "$1" ]]; then
+			title="\033[44m Mega Explorer ($megauser) \033[0m\n--------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
+		elif [[ "$1" == "megaSlDst" ]]; then
+			title="\033[47m\033[30m Mega Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+		fi
+
+		local prevIFS="$IFS"
+		while IFS= read -r line; do
+			file_list+=( "${line% (folder)}" )
+			MEGA_FILE_TYPES+=( "d" )
+		done < <(mega-ls -a | grep -i "(folder)$")
+
+		while IFS= read -r line; do
+    		file_list+=( "$line" )
+			MEGA_FILE_TYPES+=( "f" )
+		done < <(mega-ls -a | grep -iv "(folder)$" | sed -E s/' \(.+ .+\)$'//)
+		IFS="$prevIFS"
+
+
+# 		for file in *; do
+# 			if [[ -d "$file" ]]; then
+# 				file_list+=( "$file" )
+# 			fi
+# 			if [[ "$prevItem" == "$file" ]]; then
+# 				checkPrev=1
+# 			fi
+# 		done
+# 
+# 		for file in *; do
+# 			if [[ -f "$file" ]]; then
+# 				file_list+=( "$file" )
+# 			fi
+# 		done
+
+		clear
+		printf "$title"
+
+		if [[ -z "$prevItem" || ! -z "$prevItem" && $checkPrev == 0 ]]; then
+			if [[ ! -z "${file_list[2]}" ]]; then
+				prevItem=${file_list[2]}
+			else
+				prevItem=".."
+			fi
+		fi
+		
+		tmenu "$prevItem" "${file_list[@]}"
+		
+		prevItem="$MENU_SELECTED"
+
+		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
+			break
+		elif [[ "$TMENU_RESULT" == 0 ]]; then
+			if [[ "$1" == "megaSlDst" ]]; then
+				MEGADST="$(mega-pwd)"
+				TMENU_RESULT="$MEGADST"
+				break
+			else
+				action.megaFile "$MENU_SELECTED"
+			fi
+		elif [[ "$TMENU_RESULT" == "." ]]; then
+			action.megaDir "$TMENU_RESULT"
+		elif [[ "$TMENU_RESULT" == ".." ]]; then
+			action.megaDir "$TMENU_RESULT"
+		else
+			action.megaFile "$TMENU_RESULT"
+		fi
+	done
+# 	if [[ "$1" == "slDst" ]]; then
+# 		cd "$SRC"
+# 		WDIR="$SRC"
+# 	fi
 }
 
 tmenu.parseTCMD() {
@@ -899,7 +1031,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	echo "           ##############################           "
 	echo
 
-	tmenu "1. File explorer" "2. Backup document" "3. Backup snippets" "4. Backup Vim" "5. Vim" "6. Puppet" "7. Sync all" "8. History" "9. Exit"
+	tmenu "1. File explorer" "2. Backup document" "3. Backup snippets" "4. Backup Vim" "5. Vim" "6. Puppet" "7. Sync all" "8. Mega.nz" "9. Exit"
 
 	case "$TMENU_RESULT" in
 		"1. File explorer") tmenu.fileExplorer ;;
@@ -1068,10 +1200,30 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			cd "$WDIR"
 			;;
 
-		"8. History")
-			cat ~/.tfe_history
-			echo
-			read -rsn1 -p "Press any key to continue..." key
+		"8. Mega.nz")
+			megauser="$(mega-whoami 2> /dev/null)"
+			if [[ $? -ne 0 ]]; then
+				read -rep "Username: (chickenvnn) " megauser
+				read -rsep "Password: " megapass
+				read -rep "2FA code: " mega2fa
+				echo
+
+				if [[ -z "$megauser" ]]; then
+					megauser="chickenvnn@gmail.com"
+				fi
+
+				mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
+			fi
+
+			if [[ $? -eq 0 ]]; then
+				megauser=${megauser#Account e-mail: }
+				tmenu.megaExplorer
+			else
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+
+			unset MEGA_FILE_TYPES
 			;;
 
 		"9. Exit" | "0" | "$ESC_KEY") exit ;;
