@@ -101,7 +101,7 @@ tmenu.hashCheck() {
 
 runCmd() {
 	eval "$1"
-	if [[ $? != 0 ]]; then
+	if [[ $? -ne 0 ]]; then
 		TFE_ERR+=( "$1" )
 	fi
 }
@@ -277,7 +277,7 @@ action.dir() {
 				else rm -rf "./$1"
 				fi
 
-				if [[ "$?" != 0 ]]; then
+				if [[ $? -ne 0 ]]; then
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else unset prevItem
@@ -652,7 +652,7 @@ action.file() {
 
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
 				rm -f "./$1"
-				if [[ "$?" != 0 ]]; then
+				if [[ $? -ne 0 ]]; then
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else unset prevItem
@@ -947,6 +947,7 @@ action.megaDir() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 				return
+			else unset prevItem
 			fi
 
 			mega-ls "$1" &> /dev/null
@@ -997,15 +998,79 @@ action.megaFile() {
 	echo "----------------"
 	echo
 
-	actions+=( "Download" "Move" "Delete" "Rename" )
+	if [[ ! -z "$DST" ]]; then
+		local prevDST="$(basename "$DST")"
+		actions+=( "Download to \"$prevDST\"" )
+	fi
+	actions+=( "Download" "Copy" "Move" "Delete" "Rename" )
 
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
+		"Download to \"$prevDST\"")
+			mega-get "$1" "$DST"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
 		"Download")
 			tmenu.fileExplorer "slDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-get "$1" "$TMENU_RESULT"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Copy")
+			tmenu.megaExplorer "megaSlDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-cp "$1" "$TMENU_RESULT"
+				if [[ $? -eq 0 ]]; then
+					echo "Copy finished: $TMENU_RESULT/$1"
+				fi
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Move")
+			tmenu.megaExplorer "megaSlDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-mv "$1" "$TMENU_RESULT"
+				if [[ $? -eq 0 ]]; then
+					echo "Move finished: $TMENU_RESULT/$1"
+				fi
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Delete")
+			local msg="Delete \"$1\"? (y/N): "
+			read -rn1 -p "$msg" key
+			echo
+			echo
+
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				mega-rm -f "$1"
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else unset prevItem
+				fi
+			fi
+			;;
+
+		"Rename")
+			local newName=""
+			read -rep "New name: (cancel) " newName
+			echo
+			if [[ ! -z "$newName" ]]; then
+				mega-mv "$1" "$newName"
+			fi
+
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -1030,7 +1095,7 @@ tmenu.megaExplorer() {
 		fi
 
 		if [[ -z "$1" ]]; then
-			title="\033[44m Mega File Explorer ($megauser) \033[0m\n-------------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
+			title="\033[44m Mega File Explorer (\033[1;31m$megauser\033[0m\033[44m) \033[0m\n-------------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "megaSlDst" ]]; then
 			title="\033[42m Mega Select Destination \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
 		elif [[ "$1" == "megaSlFile" ]]; then
@@ -1265,7 +1330,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		"6. Puppet")
 			cd "/data/data/com.termux/files/home/dev/nodejs/message_spreader"
 			PUPPET=1 node index.js
-			if [[ $? != 0 ]]; then
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
