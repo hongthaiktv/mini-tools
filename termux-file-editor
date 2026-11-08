@@ -787,6 +787,7 @@ tmenu.fileExplorer() {
 	SRC="$(pwd)"
 	local title=""
 	local prevItem=""
+	unset MEGA_FILE_TYPES
 
 	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		local file_list=( "." ".." )
@@ -797,7 +798,9 @@ tmenu.fileExplorer() {
 		elif [[ "$1" == "slDst" ]]; then
 			title="\033[47m\033[30m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[47m\033[30m Mega Select Upload \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+			title="\033[47m\033[30m Mega Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+		elif [[ "$1" == "megaSlSrcFile" ]]; then
+			title="\033[47m\033[30m Mega Select File Upload \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		fi
 
 		for file in *; do
@@ -838,12 +841,15 @@ tmenu.fileExplorer() {
 				TMENU_RESULT="$(pwd)"
 				break
 			elif [[ "$1" == "megaSlDst" ]]; then
-				MEGASRC="$MENU_SELECTED"
-				TMENU_RESULT="$MEGASRC"
+				MEGADST="$(pwd)"
+				TMENU_RESULT="$MEGADST"
+				break
+			elif [[ "$1" == "megaSlSrcFile" ]]; then
+				TMENU_RESULT="$MENU_SELECTED"
 				break
 			elif [[ -d "$MENU_SELECTED" ]]; then
 				action.dir "$MENU_SELECTED"
-			elif [[ -f "$MENU_SELECTED" ]]; then
+			else
 				action.file "$MENU_SELECTED"
 			fi
 		elif [[ "$TMENU_RESULT" == "." ]]; then
@@ -878,12 +884,12 @@ action.megaDir() {
 
 	case "$TMENU_RESULT" in
 		"Upload")
-			tmenu.fileExplorer "megaSlDst"
+			tmenu.fileExplorer "megaSlSrcFile"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
-				mega-put "$MENU_SELECTED" .
+				mega-put "$TMENU_RESULT" .
+				echo
+				read -rsn1 -p "Press any key to continue..." key
 			fi
-			echo
-			read -rsn1 -p "Press any key to continue..." key
 			;;
 	esac
 }
@@ -907,11 +913,12 @@ action.megaFile() {
 }
 
 tmenu.megaExplorer() {
-	MEGAWDIR="/"
+	MEGAWDIR="$(mega-pwd)"
 	MEGASRC="/"
 	MEGADST="/"
 	local title=""
 	local prevItem=""
+	local index=-1
 
 	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		local file_list=( "." ".." )
@@ -936,21 +943,12 @@ tmenu.megaExplorer() {
 		done < <(mega-ls -a | grep -iv "(folder)$" | sed -E s/' \(.+ .+\)$'//)
 		IFS="$prevIFS"
 
-
-# 		for file in *; do
-# 			if [[ -d "$file" ]]; then
-# 				file_list+=( "$file" )
-# 			fi
-# 			if [[ "$prevItem" == "$file" ]]; then
-# 				checkPrev=1
-# 			fi
-# 		done
-# 
-# 		for file in *; do
-# 			if [[ -f "$file" ]]; then
-# 				file_list+=( "$file" )
-# 			fi
-# 		done
+		for file in "${file_list[@]}"; do
+			if [[ "$file" == "$prevItem" ]]; then
+				checkPrev=1
+				break
+			fi
+		done
 
 		clear
 		printf "$title"
@@ -967,6 +965,14 @@ tmenu.megaExplorer() {
 		
 		prevItem="$MENU_SELECTED"
 
+		for (( i=0 ; i<${#file_list[@]} ; i++ )); do
+			local file="${file_list[$i]}"
+			if [[ "$file" == "$MENU_SELECTED" ]]; then
+				index=$i
+				break
+			fi
+		done
+
 		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 			break
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
@@ -974,21 +980,31 @@ tmenu.megaExplorer() {
 				MEGADST="$(mega-pwd)"
 				TMENU_RESULT="$MEGADST"
 				break
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
+				action.megaDir "$MENU_SELECTED"
 			else
 				action.megaFile "$MENU_SELECTED"
 			fi
 		elif [[ "$TMENU_RESULT" == "." ]]; then
 			action.megaDir "$TMENU_RESULT"
-		elif [[ "$TMENU_RESULT" == ".." ]]; then
-			action.megaDir "$TMENU_RESULT"
 		else
-			action.megaFile "$TMENU_RESULT"
+			if [[ "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
+				if [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '/' ]]; then
+					continue
+				else
+					mega-cd "$TMENU_RESULT"
+					MEGAWDIR="$(mega-pwd)"
+				fi
+			else
+				action.megaFile "$TMENU_RESULT"
+			fi
 		fi
 	done
-# 	if [[ "$1" == "slDst" ]]; then
-# 		cd "$SRC"
-# 		WDIR="$SRC"
-# 	fi
+
+	if [[ "$1" == "megaSlDst" ]]; then
+		mega-cd "$MEGASRC"
+		MEGAWDIR="$MEGASRC"
+	fi
 }
 
 tmenu.parseTCMD() {
@@ -1205,14 +1221,18 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			if [[ $? -ne 0 ]]; then
 				read -rep "Username: (chickenvnn) " megauser
 				read -rsep "Password: " megapass
-				read -rep "2FA code: " mega2fa
+				read -rep "2FA code: (none) " mega2fa
 				echo
 
 				if [[ -z "$megauser" ]]; then
 					megauser="chickenvnn@gmail.com"
 				fi
 
-				mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
+				if [[ -z "$mega2fa" ]]; then
+					mega-login "$megauser" "$megapass"
+				else
+					mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
+				fi
 			fi
 
 			if [[ $? -eq 0 ]]; then
