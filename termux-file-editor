@@ -310,9 +310,7 @@ action.dir() {
 			echo
 			eval fName="$fName"
 			if [[ ! -z "$fName" ]]; then
-				cd "$1"
-				mkdir "$fName"
-				cd "$WDIR"
+				mkdir "$1/$fName"
 			fi
 
 			if [[ $? -ne 0 ]]; then
@@ -797,10 +795,8 @@ tmenu.fileExplorer() {
 			title="\033[44m File Explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "slDst" ]]; then
 			title="\033[47m\033[30m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
-		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[47m\033[30m Mega Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
-		elif [[ "$1" == "megaSlSrcFile" ]]; then
-			title="\033[47m\033[30m Mega Select File Upload \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+		elif [[ "$1" == "slFile" ]]; then
+			title="\033[47m\033[30m Select File/Folder \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		fi
 
 		for file in *; do
@@ -838,14 +834,16 @@ tmenu.fileExplorer() {
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "slDst" ]]; then
 				DST="$(pwd)"
-				TMENU_RESULT="$(pwd)"
+				TMENU_RESULT="$DST"
 				break
-			elif [[ "$1" == "megaSlDst" ]]; then
-				MEGADST="$(pwd)"
-				TMENU_RESULT="$MEGADST"
-				break
-			elif [[ "$1" == "megaSlSrcFile" ]]; then
-				TMENU_RESULT="$MENU_SELECTED"
+			elif [[ "$1" == "slFile" ]]; then
+				if [[ "$MENU_SELECTED" == '.' ]]; then
+					TMENU_RESULT="$WDIR"
+				elif [[ "$MENU_SELECTED" == '..' ]]; then
+					TMENU_RESULT="$(sed -E s/^\(.*\)\\/.*/"\1"/ <<< "$WDIR")"
+				else
+					TMENU_RESULT="$WDIR/$MENU_SELECTED"
+				fi
 				break
 			elif [[ -d "$MENU_SELECTED" ]]; then
 				action.dir "$MENU_SELECTED"
@@ -865,28 +863,125 @@ tmenu.fileExplorer() {
 			action.file "$TMENU_RESULT"
 		fi
 	done
-	if [[ "$1" == "slDst" ]]; then
+	if [[ "$1" == "slDst" || "$1" == "slFile" ]]; then
 		cd "$SRC"
 		WDIR="$SRC"
 	fi
 }
 
 action.megaDir() {
-	declare -a actions
+	unset MEGA_FILE_TYPES
 
 	echo "Mega Directory Action"
 	echo "---------------------"
 	echo
 
-	actions+=( "Upload" )
+	local actions=( "Upload" )
+
+	if [[ ! -z "$DST" ]]; then
+		local prevDST="$(basename "$DST")"
+		actions+=( "Download to \"$prevDST\"" )
+	fi
+	actions+=( "Download" "Copy" "Move" "Delete" "Rename" "New folder" )
 
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
 		"Upload")
-			tmenu.fileExplorer "megaSlSrcFile"
+			tmenu.fileExplorer "slFile"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
-				mega-put "$TMENU_RESULT" .
+				mega-put "$TMENU_RESULT" "$1"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Download to \"$prevDST\"")
+			mega-get "$1" "$DST"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Download")
+			tmenu.fileExplorer "slDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-get "$1" "$TMENU_RESULT"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Copy")
+			tmenu.megaExplorer "megaSlDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-cp "$1" "$TMENU_RESULT"
+				if [[ $? -eq 0 ]]; then
+					echo "Copy finished: $TMENU_RESULT/$1"
+				fi
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Move")
+			local movedPath=""
+			tmenu.megaExplorer "megaSlDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-mv "$1" "$TMENU_RESULT"
+				if [[ $? -eq 0 ]]; then
+					movedPath="$TMENU_RESULT/$1"
+					if [[ "$1" == '.' ]]; then
+						MEGAWDIR="$(mega-pwd)"
+						movedPath="$MEGAWDIR"
+					fi
+					echo "Move finished: $movedPath"
+				fi
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Delete")
+			mega-rm -r "$1"
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+				return
+			fi
+
+			mega-ls "$1" &> /dev/null
+			if [[ $? -ne 0 ]]; then
+				if [[ "$1" == '.' ]]; then
+					local parentDir="$(sed -E s/^\(.*\)\\/.*/"\1"/ <<< "$MEGAWDIR")"
+					mega-cd "$parentDir"
+					MEGAWDIR="$parentDir"
+				fi
+			fi
+			;;
+
+		"Rename")
+			local newName=""
+			read -rep "New name: (cancel) " newName
+			echo
+			if [[ ! -z "$newName" ]]; then
+				mega-mv "$1" "$newName"
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"New folder")
+			local fName=""
+			read -rep "Folder name: (cancel) " fName
+			echo
+			if [[ ! -z "$fName" ]]; then
+				mega-mkdir "$1/$fName"
+			fi
+
+			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -895,27 +990,33 @@ action.megaDir() {
 }
 
 action.megaFile() {
+	unset MEGA_FILE_TYPES
 	declare -a actions
 
 	echo "Mega File Action"
 	echo "----------------"
 	echo
 
-	actions+=( "Mega file act" )
+	actions+=( "Download" "Move" "Delete" "Rename" )
 
 	tmenu "${actions[@]}"
 
 	case "$TMENU_RESULT" in
-		"Mega file act")
-			read -rsn1 -p "Press any key to continue..." key
+		"Download")
+			tmenu.fileExplorer "slDst"
+			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+				mega-get "$1" "$TMENU_RESULT"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
 			;;
 	esac
 }
 
 tmenu.megaExplorer() {
 	MEGAWDIR="$(mega-pwd)"
-	MEGASRC="/"
-	MEGADST="/"
+	MEGASRC="$MEGAWDIR"
+	MEGADST="$MEGAWDIR"
 	local title=""
 	local prevItem=""
 	local index=-1
@@ -924,11 +1025,16 @@ tmenu.megaExplorer() {
 		local file_list=( "." ".." )
 		MEGA_FILE_TYPES=( "d" "d" )
 		local checkPrev=0
+		if [[ "$prevItem" == '.' || "$prevItem" == '..' ]]; then
+			prevItem=""
+		fi
 
 		if [[ -z "$1" ]]; then
-			title="\033[44m Mega Explorer ($megauser) \033[0m\n--------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
+			title="\033[44m Mega File Explorer ($megauser) \033[0m\n-------------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[47m\033[30m Mega Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+			title="\033[42m Mega Select Destination \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
+		elif [[ "$1" == "megaSlFile" ]]; then
+			title="\033[42m Mega Select File/Folder \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
 		fi
 
 		local prevIFS="$IFS"
@@ -980,6 +1086,15 @@ tmenu.megaExplorer() {
 				MEGADST="$(mega-pwd)"
 				TMENU_RESULT="$MEGADST"
 				break
+			elif [[ "$1" == "megaSlFile" ]]; then
+				if [[ "$MENU_SELECTED" == '.' ]]; then
+					TMENU_RESULT="$MEGAWDIR"
+				elif [[ "$MENU_SELECTED" == '..' ]]; then
+					TMENU_RESULT="$(sed -E s/^\(.*\)\\/.*/"\1"/ <<< "$MEGAWDIR")"
+				else
+					TMENU_RESULT="$MEGAWDIR/$MENU_SELECTED"
+				fi
+				break
 			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
 				action.megaDir "$MENU_SELECTED"
 			else
@@ -1001,7 +1116,7 @@ tmenu.megaExplorer() {
 		fi
 	done
 
-	if [[ "$1" == "megaSlDst" ]]; then
+	if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
 		mega-cd "$MEGASRC"
 		MEGAWDIR="$MEGASRC"
 	fi
