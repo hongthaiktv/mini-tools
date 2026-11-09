@@ -1255,7 +1255,13 @@ tmenu.megaExplorer() {
 			action.megaDir "$TMENU_RESULT"
 		else
 			if [[ "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
-				if [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '/' ]]; then
+				if [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '//bin' ]]; then
+					if [[ "$MEGASRC" == '//bin'* ]]; then
+						MEGASRC='/'
+					fi
+					mega-cd "$MEGASRC"
+					MEGAWDIR="$MEGASRC"
+				elif [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '/' ]]; then
 					continue
 				else
 					mega-cd "$TMENU_RESULT"
