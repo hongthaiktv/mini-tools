@@ -128,6 +128,34 @@ checkRootDir() {
 	return $isRootDir
 }
 
+megaLogin() {
+	megauser="$(mega-whoami 2> /dev/null)"
+	if [[ $? -ne 0 ]]; then
+		read -rep "Username: (chickenvnn) " megauser
+		read -rsep "Password: " megapass
+		read -rep "2FA code: (none) " mega2fa
+		echo
+
+		if [[ -z "$megauser" ]]; then
+			megauser="chickenvnn@gmail.com"
+		fi
+
+		if [[ -z "$mega2fa" ]]; then
+			mega-login "$megauser" "$megapass"
+		else
+			mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
+		fi
+	fi
+
+	if [[ $? -eq 0 ]]; then
+		megauser=${megauser#Account e-mail: }
+	else
+		echo
+		read -rsn1 -p "Press any key to continue..." key
+		return -1
+	fi
+}
+
 action.dir() {
 	echo "Directory Action"
 	echo "----------------"
@@ -146,7 +174,7 @@ action.dir() {
 		actions+=( "Move to \"$prevDST\"" )
 	fi
 
-	actions+=( "Move" "Delete" "Rename" "New folder" "New file" "Create checksums" )
+	actions+=( "Move" "Delete" "Rename" "New folder" "New file" "Create checksums" "Upload to Mega.nz" )
 
 	if [[ -f "$1/checksums.sha256" ]]; then
 		actions+=( "Checksums" )
@@ -347,6 +375,26 @@ action.dir() {
 			cd "$WDIR"
 			;;
 
+		"Upload to Mega.nz")
+			local srcPath=""
+			if [[ "$1" == '.' ]]; then
+				srcPath="$WDIR"
+			elif [[ "$1" == '..' ]]; then
+				srcPath="$(sed -E s/^\(.*\)\\/.*/"\1"/ <<< "$WDIR")"
+			else
+				srcPath="$WDIR/$1"
+			fi
+
+			tmenu.megaExplorer "megaSlDst"
+			if [[ $? -eq 0 ]]; then
+				if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+					mega-put "$srcPath" "$TMENU_RESULT"
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+			fi
+			;;
+
 		"Checksums")
 			cd "$1"
 			sha256sum -c "checksums.sha256" 1> /dev/null
@@ -529,7 +577,7 @@ action.file() {
 		actions+=( "Move to \"$prevDST\"" )
 	fi
 
-	actions+=( "Move" "Delete" "Rename" "Edit" "Hash check" )
+	actions+=( "Move" "Delete" "Rename" "Edit" "Hash check" "Upload to Mega.nz" )
 
 	if [[ "$1" == "checksums.sha256" ]]; then
 		actions+=( "Checksums" )
@@ -683,6 +731,17 @@ action.file() {
 			tmenu.hashCheck "$1"
 			;;
 
+		"Upload to Mega.nz")
+			tmenu.megaExplorer "megaSlDst"
+			if [[ $? -eq 0 ]]; then
+				if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
+					mega-put "$1" "$TMENU_RESULT"
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+			fi
+			;;
+
 		"Checksums")
 			sha256sum -c "checksums.sha256" 1> /dev/null
 			if [[ $? -eq 0 ]]; then
@@ -794,9 +853,9 @@ tmenu.fileExplorer() {
 		if [[ -z "$1" ]]; then
 			title="\033[44m File Explorer \033[0m\n---------------\n\n$(pwd)\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "slDst" ]]; then
-			title="\033[47m\033[30m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+			title="\033[46m Select Destination \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		elif [[ "$1" == "slFile" ]]; then
-			title="\033[47m\033[30m Select File/Folder \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
+			title="\033[46m Select File/Folder \033[0m\n--------------------\n\n$(pwd)\n(0: Select)\n\n"
 		fi
 
 		for file in *; do
@@ -1079,6 +1138,11 @@ action.megaFile() {
 }
 
 tmenu.megaExplorer() {
+	megaLogin
+	if [[ $? -ne 0 ]]; then
+		return -1
+	fi
+
 	MEGAWDIR="$(mega-pwd)"
 	MEGASRC="$MEGAWDIR"
 	MEGADST="$MEGAWDIR"
@@ -1095,11 +1159,11 @@ tmenu.megaExplorer() {
 		fi
 
 		if [[ -z "$1" ]]; then
-			title="\033[44m Mega File Explorer (\033[1;31m$megauser\033[0m\033[44m) \033[0m\n-------------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
+			title="\033[42m Mega File Explorer (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n-------------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[42m Mega Select Destination \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
+			title="\033[41m Mega Select Destination \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
 		elif [[ "$1" == "megaSlFile" ]]; then
-			title="\033[42m Mega Select File/Folder \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
+			title="\033[41m Mega Select File/Folder \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
 		fi
 
 		local prevIFS="$IFS"
@@ -1185,6 +1249,7 @@ tmenu.megaExplorer() {
 		mega-cd "$MEGASRC"
 		MEGAWDIR="$MEGASRC"
 	fi
+	unset MEGA_FILE_TYPES
 }
 
 tmenu.parseTCMD() {
@@ -1220,11 +1285,10 @@ fi
 
 until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	clear
-	echo "           ##############################           "
-	echo "           #                            #           "
-	echo "           #     TERMUX FILE EDITOR     #           "
-	echo "           #                            #           "
-	echo "           ##############################           "
+	printf "\t\t\033[41m                        \033[0m\n"
+	printf "\t\t\033[41m   TERMUX FILE EDITOR   \033[0m\n"
+	printf "\t\t\033[41m                        \033[0m\n"
+	echo
 	echo
 
 	tmenu "1. File explorer" "2. Backup document" "3. Backup snippets" "4. Backup Vim" "5. Vim" "6. Puppet" "7. Sync all" "8. Mega.nz" "9. Exit"
@@ -1397,33 +1461,7 @@ until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 			;;
 
 		"8. Mega.nz")
-			megauser="$(mega-whoami 2> /dev/null)"
-			if [[ $? -ne 0 ]]; then
-				read -rep "Username: (chickenvnn) " megauser
-				read -rsep "Password: " megapass
-				read -rep "2FA code: (none) " mega2fa
-				echo
-
-				if [[ -z "$megauser" ]]; then
-					megauser="chickenvnn@gmail.com"
-				fi
-
-				if [[ -z "$mega2fa" ]]; then
-					mega-login "$megauser" "$megapass"
-				else
-					mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
-				fi
-			fi
-
-			if [[ $? -eq 0 ]]; then
-				megauser=${megauser#Account e-mail: }
-				tmenu.megaExplorer
-			else
-				echo
-				read -rsn1 -p "Press any key to continue..." key
-			fi
-
-			unset MEGA_FILE_TYPES
+			tmenu.megaExplorer
 			;;
 
 		"9. Exit" | "0" | "$ESC_KEY") exit ;;
