@@ -1161,7 +1161,11 @@ tmenu.megaExplorer() {
 
 		clear
 		if [[ -z "$1" ]]; then
-			title="\033[42m Mega File Explorer (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n-------------------------------------------\n%s\n\n$MEGAWDIR\n(0: Action | 1: Directory | Esc+l: Logs)\n\n"
+			local treeView="Trash"
+			if [[ "$MEGAWDIR" == '//bin'* ]]; then
+				treeView="Files"
+			fi
+			title="\033[42m Mega File Explorer (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n-------------------------------------------\n%s\n\n$MEGAWDIR\n(0: Action | 1: Directory | Esc+l: Logs | Esc+t: $treeView)\n\n"
 			printf "$title" "$megaUsedStorage"
 		elif [[ "$1" == "megaSlDst" ]]; then
 			title="\033[41m Mega Select Destination \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
@@ -1216,6 +1220,18 @@ tmenu.megaExplorer() {
 			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
 			echo
 			read -rsn1 -p "Press any key to continue..." key
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'t' ]]; then
+			if [[ "$MEGAWDIR" == '//bin'* ]]; then
+				if [[ "$MEGASRC" == '//bin'* ]]; then
+					MEGASRC="/"
+				fi
+				mega-cd "$MEGASRC"
+				MEGAWDIR="$MEGASRC"
+			else
+				MEGASRC="$MEGAWDIR"
+				mega-cd "//bin"
+				MEGAWDIR="//bin"
+			fi
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "megaSlDst" ]]; then
 				MEGADST="$(mega-pwd)"
@@ -1291,9 +1307,9 @@ fi
 
 until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 	clear
-	printf "\t\t\033[41m                        \033[0m\n"
-	printf "\t\t\033[41m   TERMUX FILE EDITOR   \033[0m\n"
-	printf "\t\t\033[41m                        \033[0m\n"
+	printf "\t\t\033[44m                        \033[0m\n"
+	printf "\t\t\033[44m   TERMUX FILE EDITOR   \033[0m\n"
+	printf "\t\t\033[44m                        \033[0m\n"
 	echo
 	echo
 
