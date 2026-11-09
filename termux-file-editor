@@ -1149,6 +1149,7 @@ tmenu.megaExplorer() {
 	local title=""
 	local prevItem=""
 	local index=-1
+	local megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'USED: '/ | sed -E s/' '{24}/' - '/)"
 
 	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		local file_list=( "." ".." )
@@ -1158,12 +1159,16 @@ tmenu.megaExplorer() {
 			prevItem=""
 		fi
 
+		clear
 		if [[ -z "$1" ]]; then
-			title="\033[42m Mega File Explorer (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n-------------------------------------------\n\n"$MEGAWDIR"\n(0: Action | 1: Directory)\n\n"
+			title="\033[42m Mega File Explorer (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n-------------------------------------------\n%s\n\n$MEGAWDIR\n(0: Action | 1: Directory | Esc+l: Logs)\n\n"
+			printf "$title" "$megaUsedStorage"
 		elif [[ "$1" == "megaSlDst" ]]; then
 			title="\033[41m Mega Select Destination \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
+			printf "$title"
 		elif [[ "$1" == "megaSlFile" ]]; then
 			title="\033[41m Mega Select File/Folder \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
+			printf "$title"
 		fi
 
 		local prevIFS="$IFS"
@@ -1184,9 +1189,6 @@ tmenu.megaExplorer() {
 				break
 			fi
 		done
-
-		clear
-		printf "$title"
 
 		if [[ -z "$prevItem" || ! -z "$prevItem" && $checkPrev == 0 ]]; then
 			if [[ ! -z "${file_list[2]}" ]]; then
@@ -1210,6 +1212,10 @@ tmenu.megaExplorer() {
 
 		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 			break
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'l' ]]; then
+			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "megaSlDst" ]]; then
 				MEGADST="$(mega-pwd)"
