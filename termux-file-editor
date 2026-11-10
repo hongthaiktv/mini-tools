@@ -929,7 +929,11 @@ tmenu.fileExplorer() {
 }
 
 getMegaUsedStorage() {
-	megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+	megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{24}/'Usage: '/ | sed -E s/' '{23}/'  - '/)"
+}
+
+getMegaUsedTrashBin() {
+	megaUsedTrashBin="$(mega-df -h | grep -iE 'rubbish' | sed -E s/^.{24}/'Trash: '/ | sed -E s/' and'//)"
 }
 
 action.megaDir() {
@@ -1032,6 +1036,7 @@ action.megaDir() {
 				else
 					unset prevItem
 				fi
+				getMegaUsedTrashBin
 				getMegaUsedStorage
 			fi
 			;;
@@ -1065,6 +1070,7 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
+					getMegaUsedTrashBin
 					unset prevItem
 				fi
 			fi
@@ -1092,6 +1098,7 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
+					getMegaUsedTrashBin
 					getMegaUsedStorage
 					unset prevItem
 				fi
@@ -1151,7 +1158,7 @@ action.megaDir() {
 					item="$(sed -E s/^\(.*\)\\/.*/"\1"/ <<< "$MEGAWDIR")/."
 				fi
 			fi
-			mega-ls -lh "$item"
+			mega-ls -lh --show-handles "$item"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1236,7 +1243,9 @@ action.megaFile() {
 				if [[ $? -ne 0 ]]; then
 					echo
 					read -rsn1 -p "Press any key to continue..." key
-				else unset prevItem
+				else
+					getMegaUsedTrashBin
+					unset prevItem
 				fi
 			fi
 			;;
@@ -1254,6 +1263,7 @@ action.megaFile() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
+					getMegaUsedTrashBin
 					getMegaUsedStorage
 					unset prevItem
 				fi
@@ -1281,7 +1291,7 @@ action.megaFile() {
 			;;
 
 		"Detail")
-			mega-ls -lh "$1"
+			mega-ls -lh --show-handles "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1300,7 +1310,12 @@ tmenu.megaExplorer() {
 	local title=""
 	local prevItem=""
 	local index=-1
-	getMegaUsedStorage
+
+	if [[ "$MEGAWDIR" == '//bin'* ]]; then
+		getMegaUsedTrashBin
+	else
+		getMegaUsedStorage
+	fi
 
 	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		local file_list=( "." ".." )
@@ -1312,12 +1327,13 @@ tmenu.megaExplorer() {
 
 		clear
 		if [[ -z "$1" ]]; then
-			local treeView="Trash"
 			if [[ "$MEGAWDIR" == '//bin'* ]]; then
-				treeView="Files"
+				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)              \033[0m\n\033[42m--------------------------------------------------------\033[0m\n\033[47m\033[1;30m %s \033[0m\n\nPath: $MEGAWDIR\n(0: Action | 1: Directory | Esc+t: Files | Esc+m: Menu)\n\n"
+				printf "$title" "$megaUsedTrashBin"
+			else
+				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)     \033[0m\n\033[42m-----------------------------------------------\033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: $MEGAWDIR\n(0: Action | 1: Directory | Esc+t: Trash | Esc+m: Menu)\n\n"
+				printf "$title" "$megaUsedStorage"
 			fi
-			title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n\033[42m-------------------------------------------\033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: $MEGAWDIR\n(0: Action | 1: Directory | Esc+l: Logs | Esc+t: $treeView)\n\n"
-			printf "$title" "$megaUsedStorage"
 		elif [[ "$1" == "megaSlDst" ]]; then
 			title="\033[41m MEGA SELECT DESTINATION \033[0m\n-------------------------\n\n"$MEGAWDIR"\n(0: Select)\n\n"
 			printf "$title"
@@ -1378,10 +1394,16 @@ tmenu.megaExplorer() {
 				fi
 				mega-cd "$MEGASRC"
 				MEGAWDIR="$MEGASRC"
+				if [[ -z "$megaUsedStorage" ]]; then
+					getMegaUsedStorage
+				fi
 			else
 				MEGASRC="$MEGAWDIR"
 				mega-cd "//bin"
 				MEGAWDIR="//bin"
+				if [[ -z "$megaUsedTrashBin" ]]; then
+					getMegaUsedTrashBin
+				fi
 			fi
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "megaSlDst" ]]; then
