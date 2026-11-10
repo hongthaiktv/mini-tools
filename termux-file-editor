@@ -928,6 +928,10 @@ tmenu.fileExplorer() {
 	fi
 }
 
+getMegaUsedStorage() {
+	megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+}
+
 action.megaDir() {
 	unset MEGA_FILE_TYPES
 
@@ -961,7 +965,7 @@ action.megaDir() {
 			tmenu.fileExplorer "slFile"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-put "$TMENU_RESULT" "$1"
-				megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+				getMegaUsedStorage
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -988,7 +992,7 @@ action.megaDir() {
 				mega-cp "$1" "$TMENU_RESULT"
 				if [[ $? -eq 0 ]]; then
 					echo "Copy finished: $TMENU_RESULT/$1"
-					megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+					getMegaUsedStorage
 				fi
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -1028,7 +1032,7 @@ action.megaDir() {
 				else
 					unset prevItem
 				fi
-				megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+				getMegaUsedStorage
 			fi
 			;;
 
@@ -1088,7 +1092,7 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
-					megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+					getMegaUsedStorage
 					unset prevItem
 				fi
 			fi
@@ -1201,7 +1205,7 @@ action.megaFile() {
 				mega-cp "$1" "$TMENU_RESULT"
 				if [[ $? -eq 0 ]]; then
 					echo "Copy finished: $TMENU_RESULT/$1"
-					megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+					getMegaUsedStorage
 				fi
 				echo
 				read -rsn1 -p "Press any key to continue..." key
@@ -1250,7 +1254,7 @@ action.megaFile() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+					getMegaUsedStorage
 					unset prevItem
 				fi
 			fi
@@ -1296,7 +1300,7 @@ tmenu.megaExplorer() {
 	local title=""
 	local prevItem=""
 	local index=-1
-	megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{26}/'Usage: '/ | sed -E s/' '{24}/' - '/)"
+	getMegaUsedStorage
 
 	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
 		local file_list=( "." ".." )
@@ -1400,23 +1404,21 @@ tmenu.megaExplorer() {
 			fi
 		elif [[ "$TMENU_RESULT" == "." ]]; then
 			action.megaDir "$TMENU_RESULT"
-		else
-			if [[ "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
-				if [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '//bin' ]]; then
-					if [[ "$MEGASRC" == '//bin'* ]]; then
-						MEGASRC='/'
-					fi
-					mega-cd "$MEGASRC"
-					MEGAWDIR="$MEGASRC"
-				elif [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '/' ]]; then
-					continue
-				else
-					mega-cd "$TMENU_RESULT"
-					MEGAWDIR="$(mega-pwd)"
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
+			if [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '//bin' ]]; then
+				if [[ "$MEGASRC" == '//bin'* ]]; then
+					MEGASRC='/'
 				fi
+				mega-cd "$MEGASRC"
+				MEGAWDIR="$MEGASRC"
+			elif [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '/' ]]; then
+				continue
 			else
-				action.megaFile "$TMENU_RESULT"
+				mega-cd "$TMENU_RESULT"
+				MEGAWDIR="$(mega-pwd)"
 			fi
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'f' ]]; then
+			action.megaFile "$TMENU_RESULT"
 		fi
 	done
 
