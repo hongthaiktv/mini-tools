@@ -128,34 +128,6 @@ checkRootDir() {
 	return $isRootDir
 }
 
-megaLogin() {
-	megauser="$(mega-whoami 2> /dev/null)"
-	if [[ $? -ne 0 ]]; then
-		read -rep "Username: (chickenvnn) " megauser
-		read -rsep "Password: " megapass
-		read -rep "2FA code: (none) " mega2fa
-		echo
-
-		if [[ -z "$megauser" ]]; then
-			megauser="chickenvnn@gmail.com"
-		fi
-
-		if [[ -z "$mega2fa" ]]; then
-			mega-login "$megauser" "$megapass"
-		else
-			mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
-		fi
-	fi
-
-	if [[ $? -eq 0 ]]; then
-		megauser=${megauser#Account e-mail: }
-	else
-		echo
-		read -rsn1 -p "Press any key to continue..." key
-		return -1
-	fi
-}
-
 action.dir() {
 	echo "Directory Action"
 	echo "----------------"
@@ -851,11 +823,11 @@ tmenu.fileExplorer() {
 		local checkPrev=0
 
 		if [[ -z "$1" ]]; then
-			title="\033[44m FILE EXPLORER \033[0m\n\033[44m---------------\033[0m\n\nPath: \033[1;36m$(pwd)\033[0m\n(0: Action | 1: Directory)\n\n"
+			title="\033[44m FILE EXPLORER \033[0m\n\033[44m ------------- \033[0m\n\nPath: \033[1;36m$(pwd)\033[0m\n(0: Action | 1: Directory)\n\n"
 		elif [[ "$1" == "slDst" ]]; then
-			title="\033[46m SELECT DESTINATION \033[0m\n--------------------\n\nPath: \033[1;36m$(pwd)\033[0m\n(0: Select)\n\n"
+			title="\033[46m SELECT DESTINATION \033[0m\n\033[46m ------------------ \033[0m\n\nPath: \033[1;36m$(pwd)\033[0m\n(0: Select)\n\n"
 		elif [[ "$1" == "slFile" ]]; then
-			title="\033[46m SELECT FILE/FOLDER \033[0m\n--------------------\n\nPath: \033[1;36m$(pwd)\033[0m\n(0: Select)\n\n"
+			title="\033[46m SELECT FILE/FOLDER \033[0m\n\033[46m ------------------ \033[0m\n\nPath: \033[1;36m$(pwd)\033[0m\n(0: Select)\n\n"
 		fi
 
 		for file in *; do
@@ -928,12 +900,64 @@ tmenu.fileExplorer() {
 	fi
 }
 
+megaLogin() {
+	megauser="$(mega-whoami 2> /dev/null)"
+	if [[ $? -ne 0 ]]; then
+		read -rep "Username: (chickenvnn) " megauser
+		read -rsep "Password: " megapass
+		read -rep "2FA code: (none) " mega2fa
+		echo
+
+		if [[ -z "$megauser" ]]; then
+			megauser="chickenvnn@gmail.com"
+		fi
+
+		if [[ -z "$mega2fa" ]]; then
+			mega-login "$megauser" "$megapass"
+		else
+			mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
+		fi
+	fi
+
+	if [[ $? -eq 0 ]]; then
+		megauser=${megauser#Account e-mail: }
+	else
+		echo
+		read -rsn1 -p "Press any key to continue..." key
+		return -1
+	fi
+}
+
 getMegaUsedStorage() {
 	megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{24}/'Usage: '/ | sed -E s/' '{23}/'  - '/)"
 }
 
 getMegaUsedTrashBin() {
 	megaUsedTrashBin="$(mega-df -h | grep -iE 'rubbish' | sed -E s/^.{24}/'Trash: '/ | sed -E s/' and'//)"
+}
+
+action.megaMenu() {
+	unset MEGA_FILE_TYPES
+	clear
+	title="\033[42m MEGA MENU (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n\033[42m -------------------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(Esc+m: Back)\n\n"
+	printf "$title"
+
+	local menuList=( "Transfer Logs" "Account Info" )
+	tmenu "${menuList[@]}"
+
+	case "$TMENU_RESULT" in
+		"Transfer Logs")
+			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Account Info")
+			mega-whoami -l
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+	esac
 }
 
 action.megaDir() {
@@ -1336,17 +1360,17 @@ tmenu.megaExplorer() {
 		clear
 		if [[ -z "$1" ]]; then
 			if [[ "$MEGAWDIR" == '//bin'* ]]; then
-				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)              \033[0m\n\033[42m--------------------------------------------------------\033[0m\n\033[47m\033[1;30m %s \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Files | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)              \033[0m\n\033[42m ------------------------------------------------------ \033[0m\n\033[47m\033[1;30m %s \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Files | Esc+m: Menu)\n\n"
 				printf "$title" "$megaUsedTrashBin"
 			else
-				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)     \033[0m\n\033[42m-----------------------------------------------\033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Trash | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)     \033[0m\n\033[42m --------------------------------------------- \033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Trash | Esc+m: Menu)\n\n"
 				printf "$title" "$megaUsedStorage"
 			fi
 		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[41m MEGA SELECT DESTINATION \033[0m\n-------------------------\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
+			title="\033[41m MEGA SELECT DESTINATION \033[0m\n\033[41m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
 			printf "$title"
 		elif [[ "$1" == "megaSlFile" ]]; then
-			title="\033[41m MEGA SELECT FILE/FOLDER \033[0m\n-------------------------\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
+			title="\033[41m MEGA SELECT FILE/FOLDER \033[0m\n\033[41m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
 			printf "$title"
 		fi
 
@@ -1391,10 +1415,8 @@ tmenu.megaExplorer() {
 
 		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 			break
-		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'l' ]]; then
-			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
-			echo
-			read -rsn1 -p "Press any key to continue..." key
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'m' ]]; then
+			action.megaMenu
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'t' ]]; then
 			if [[ "$MEGAWDIR" == '//bin'* ]]; then
 				if [[ "$MEGASRC" == '//bin'* ]]; then
