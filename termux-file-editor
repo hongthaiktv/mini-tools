@@ -253,15 +253,16 @@ action.dir() {
 			;;
 
 		"Delete")
-			local msg=""
 			local dotOpt=""
-
+			local msg="Delete \033[1;31m%s\033[0m? (y/N): "
+			local itemDelete=""
 			if [[ "$1" == "." ]]; then
-				msg="Delete **All**? (y/N): "
-			else msg="Delete \"$1\"? (y/N): "
+				itemDelete='**All**'
+			else itemDelete="$1"
 			fi
 
-			read -rn1 -p "$msg" key
+			printf "$msg" "$itemDelete"
+			read -rn1 key
 			echo
 			echo
 
@@ -939,21 +940,52 @@ getMegaUsedTrashBin() {
 action.megaMenu() {
 	unset MEGA_FILE_TYPES
 	clear
-	title="\033[42m MEGA MENU (\033[1;31m$megauser\033[0m\033[42m) \033[0m\n\033[42m -------------------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(Esc+m: Back)\n\n"
+	local title="\033[41m MEGA MENU (\033[1;32m$megauser\033[0m\033[41m) \033[0m\n\033[41m -------------------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(Esc+m: Back)\n\n"
 	printf "$title"
 
-	local menuList=( "Transfer Logs" "Account Info" )
+	local menuList=( "Account Info" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" )
 	tmenu "${menuList[@]}"
 
 	case "$TMENU_RESULT" in
-		"Transfer Logs")
-			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
+		"Account Info")
+			mega-whoami -l
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"Account Info")
-			mega-whoami -l
+		"Import Link")
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Session ID")
+			mega-session
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Close All Sessions")
+			local msg="Close \033[1;31m%s\033[0m other sessions? (y/N): "
+			printf "$msg" "**All**"
+			read -rn1 key
+			echo
+			echo
+
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				mega-killsession -a
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Mount")
+			mega-mount
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Transfer Logs")
+			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -984,7 +1016,7 @@ action.megaDir() {
 		actions+=( "Move to Trash" )
 	fi
 
-	actions+=( "Rename" "New folder" "Usage" "Detail" )
+	actions+=( "Rename" "New folder" "Usage" "Export Links" "Detail" )
 
 	tmenu "${actions[@]}"
 
@@ -1173,6 +1205,12 @@ action.megaDir() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
+		"Export Links")
+			mega-export "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
 		"Detail")
 			local item="$1"
 			if [[ "$item" == '..' ]]; then
@@ -1182,7 +1220,7 @@ action.megaDir() {
 					item="$(sed -E s/^\(.*\)\\/.*/"\1"/ <<< "$MEGAWDIR")/."
 				fi
 			fi
-			mega-ls -lh --show-handles "$item"
+			mega-ls -lh --versions --show-handles "$item"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1210,7 +1248,7 @@ action.megaFile() {
 		actions+=( "Move to Trash" )
 	fi
 
-	actions+=( "Rename" "Usage" "Detail" )
+	actions+=( "Rename" "Usage" "Versions" "Detail" )
 
 	tmenu "${actions[@]}"
 
@@ -1314,8 +1352,15 @@ action.megaFile() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
+		"Versions")
+			local fileHandles=( $(mega-ls -lh --versions --show-handles "$1" | grep -E "$1#.+" | grep -oE ".:[^0-9][^ ]+") )
+			tmenu "${fileHandles[@]}"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
 		"Detail")
-			mega-ls -lh --show-handles "$1"
+			mega-ls -lh --versions --show-handles "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1360,17 +1405,17 @@ tmenu.megaExplorer() {
 		clear
 		if [[ -z "$1" ]]; then
 			if [[ "$MEGAWDIR" == '//bin'* ]]; then
-				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)              \033[0m\n\033[42m ------------------------------------------------------ \033[0m\n\033[47m\033[1;30m %s \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Files | Esc+m: Menu)\n\n"
+				title="\033[41m MEGA FILE EXPLORER (\033[1;32m$megauser\033[0m\033[41m)              \033[0m\n\033[41m ------------------------------------------------------ \033[0m\n\033[47m\033[1;30m %s \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Files | Esc+m: Menu)\n\n"
 				printf "$title" "$megaUsedTrashBin"
 			else
-				title="\033[42m MEGA FILE EXPLORER (\033[1;31m$megauser\033[0m\033[42m)     \033[0m\n\033[42m --------------------------------------------- \033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Trash | Esc+m: Menu)\n\n"
+				title="\033[41m MEGA FILE EXPLORER (\033[1;32m$megauser\033[0m\033[41m)     \033[0m\n\033[41m --------------------------------------------- \033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Trash | Esc+m: Menu)\n\n"
 				printf "$title" "$megaUsedStorage"
 			fi
 		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[41m MEGA SELECT DESTINATION \033[0m\n\033[41m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
+			title="\033[42m MEGA SELECT DESTINATION \033[0m\n\033[42m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
 			printf "$title"
 		elif [[ "$1" == "megaSlFile" ]]; then
-			title="\033[41m MEGA SELECT FILE/FOLDER \033[0m\n\033[41m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
+			title="\033[42m MEGA SELECT FILE/FOLDER \033[0m\n\033[42m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
 			printf "$title"
 		fi
 
