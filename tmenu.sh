@@ -207,7 +207,7 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 			# test file explorer color (replace with option)
 			elif [[ "$list_item" == '.' || "$list_item" == '..' ]]; then
 				printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
-			elif [[ "${MEGA_FILE_TYPES[$i - 1]}" == 'h' || -h "${MENU_LIST[$i]}" ]]; then
+			elif [[ "${MEGA_FILE_TYPES[$i - 1]}" == 'dep' || -h "${MENU_LIST[$i]}" ]]; then
 				printf "   \033[%sm%s\033[0m\n" "96" "$list_item"
 			elif [[ "${MEGA_FILE_TYPES[$i - 1]}" == 'd' || -d "${MENU_LIST[$i]}" ]]; then
 				printf "   \033[%sm%s\033[0m\n" "94" "$list_item"

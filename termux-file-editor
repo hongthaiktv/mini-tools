@@ -1376,14 +1376,19 @@ tmenu.megaExplorer() {
 
 		local prevIFS="$IFS"
 		while IFS= read -r line; do
-			file_list+=( "${line% (folder)}" )
-			MEGA_FILE_TYPES+=( "d" )
-		done < <(mega-ls -a | grep -i "(folder)$")
+			if [[ "$line" == *' (folder)' ]]; then
+				file_list+=( "${line% (folder)}" )
+				MEGA_FILE_TYPES+=( "d" )
+			else
+				file_list+=( "${line% (folder*}" )
+				MEGA_FILE_TYPES+=( "dep" )
+			fi
+		done < <(mega-ls -a | grep -i "(folder.*$")
 
 		while IFS= read -r line; do
     		file_list+=( "$line" )
 			MEGA_FILE_TYPES+=( "f" )
-		done < <(mega-ls -a | grep -iv "(folder)$" | sed -E s/' \(.+ .+\)$'//)
+		done < <(mega-ls -a | grep -iv "(folder.*$" | sed -E s/' \(.+ .+\)$'//)
 		IFS="$prevIFS"
 
 		for file in "${file_list[@]}"; do
@@ -1449,14 +1454,14 @@ tmenu.megaExplorer() {
 					TMENU_RESULT="$MEGAWDIR/$MENU_SELECTED"
 				fi
 				break
-			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd' || "${MEGA_FILE_TYPES[$index]}" == 'dep' ]]; then
 				action.megaDir "$MENU_SELECTED"
 			else
 				action.megaFile "$MENU_SELECTED"
 			fi
 		elif [[ "$TMENU_RESULT" == "." ]]; then
 			action.megaDir "$TMENU_RESULT"
-		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'd' ]]; then
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && ( "${MEGA_FILE_TYPES[$index]}" == 'd' || "${MEGA_FILE_TYPES[$index]}" == 'dep' ) ]]; then
 			if [[ "$TMENU_RESULT" == '..' && "$MEGAWDIR" == '//bin' ]]; then
 				if [[ "$MEGASRC" == '//bin'* ]]; then
 					MEGASRC='/'
