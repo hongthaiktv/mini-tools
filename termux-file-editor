@@ -936,12 +936,12 @@ getMegaUsedTrashBin() {
 }
 
 action.megaMenu() {
-	unset MEGA_FILE_TYPES
 	clear
-	local title="\033[41m MEGA MENU (\033[1;32m$megauser\033[0m\033[41m) \033[0m\n\033[41m -------------------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(Esc+m: Back)\n\n"
-	printf "$title"
+	local title="\033[41m MEGA MENU (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 14 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\nPath: \033[1;36m%s\033[0m\n(Esc+m: Back)\n\n"
+	printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$MEGAWDIR"
 
 	local menuList=( "Account Info" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" )
+	unset MEGA_FILE_TYPES
 	tmenu "${menuList[@]}"
 
 	case "$TMENU_RESULT" in
@@ -1391,9 +1391,13 @@ tmenu.megaExplorer() {
 	MEGAWDIR="$(mega-pwd)"
 	MEGASRC="$MEGAWDIR"
 	MEGADST="$MEGAWDIR"
+	local lineSpacer="                                                        "
+	local lineSeparator=" ------------------------------------------------------ "
 	local title=""
 	local prevItem=""
 	local index=-1
+	local storageInfo=""
+	local txtEscT=""
 
 	if [[ "$MEGAWDIR" == '//bin'* ]]; then
 		if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
@@ -1420,18 +1424,20 @@ tmenu.megaExplorer() {
 		clear
 		if [[ -z "$1" ]]; then
 			if [[ "$MEGAWDIR" == '//bin'* ]]; then
-				title="\033[41m MEGA FILE EXPLORER (\033[1;32m$megauser\033[0m\033[41m)              \033[0m\n\033[41m ------------------------------------------------------ \033[0m\n\033[47m\033[1;30m %s \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Files | Esc+m: Menu)\n\n"
-				printf "$title" "$megaUsedTrashBin"
+				storageInfo="$megaUsedTrashBin"
+				txtEscT="Files"
 			else
-				title="\033[41m MEGA FILE EXPLORER (\033[1;32m$megauser\033[0m\033[41m)     \033[0m\n\033[41m --------------------------------------------- \033[0m\n\033[47m\033[1;30m %s       \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Action | 1: Directory | Esc+t: Trash | Esc+m: Menu)\n\n"
-				printf "$title" "$megaUsedStorage"
+				storageInfo="$megaUsedStorage"
+				txtEscT="Trash"
 			fi
+			title="\033[41m MEGA FILE EXPLORER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 23 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\nPath: \033[1;36m%s\033[0m\n(0: Action | 1: Directory | Esc+t: %s | Esc+m: Menu)\n\n"
+			printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$MEGAWDIR" "$txtEscT"
 		elif [[ "$1" == "megaSlDst" ]]; then
-			title="\033[42m MEGA SELECT DESTINATION \033[0m\n\033[42m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
-			printf "$title"
+			title="\033[42m MEGA SELECT DESTINATION \033[0m\n\033[42m ----------------------- \033[0m\n\nPath: \033[1;36m%s\033[0m\n(0: Select)\n\n"
+			printf "$title" "$MEGAWDIR"
 		elif [[ "$1" == "megaSlFile" ]]; then
-			title="\033[42m MEGA SELECT FILE/FOLDER \033[0m\n\033[42m ----------------------- \033[0m\n\nPath: \033[1;36m$MEGAWDIR\033[0m\n(0: Select)\n\n"
-			printf "$title"
+			title="\033[42m MEGA SELECT FILE/FOLDER \033[0m\n\033[42m ----------------------- \033[0m\n\nPath: \033[1;36m%s\033[0m\n(0: Select)\n\n"
+			printf "$title" "$MEGAWDIR"
 		fi
 
 		local prevIFS="$IFS"
