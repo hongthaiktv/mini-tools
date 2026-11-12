@@ -129,9 +129,8 @@ checkRootDir() {
 }
 
 action.dir() {
-	echo "Directory Action"
-	echo "----------------"
-	echo
+	local title="\033[44m Directory Action \033[0m\n\033[44m ---------------- \033[0m\n\n"
+	printf "$title"
 
 	declare -a actions
 
@@ -535,9 +534,8 @@ action.file() {
 	declare -a actions
 	local dir="$WDIR"
 
-	echo "File Action"
-	echo "-----------"
-	echo
+	local title="\033[44m File Action \033[0m\n\033[44m ----------- \033[0m\n\n"
+	printf "$title"
 
 	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
@@ -995,9 +993,8 @@ action.megaMenu() {
 action.megaDir() {
 	unset MEGA_FILE_TYPES
 
-	echo "Mega Directory Action"
-	echo "---------------------"
-	echo
+	local title="\033[41m Mega Directory Action \033[0m\n\033[41m --------------------- \033[0m\n\n"
+	printf "$title"
 
 	local actions=( "Upload" )
 
@@ -1231,9 +1228,8 @@ action.megaFile() {
 	unset MEGA_FILE_TYPES
 	declare -a actions
 
-	echo "Mega File Action"
-	echo "----------------"
-	echo
+	local title="\033[41m Mega File Action \033[0m\n\033[41m ---------------- \033[0m\n\n"
+	printf "$title"
 
 	if [[ ! -z "$DST" ]]; then
 		local prevDST="$(basename "$DST")"
@@ -1353,10 +1349,24 @@ action.megaFile() {
 			;;
 
 		"Versions")
-			local fileHandles=( $(mega-ls -lh --versions --show-handles "$1" | grep -E "$1#.+" | grep -oE ".:[^0-9][^ ]+") )
+			printf "\033[$(( ${#actions[@]} + 4 ))A\033[0J"
+			local title="\033[41m Mega Select Version \033[0m\n\033[41m ------------------- \033[0m\n\n"
+			printf "$title"
+
+			local fileHandles=( $(mega-ls -lh --versions --show-handles "$1" | grep -E "$1#.+" | grep -oE "[a-zA-Z]:[^ ]+") )
 			tmenu "${fileHandles[@]}"
-			echo
-			read -rsn1 -p "Press any key to continue..." key
+
+			local fileHandle=""
+			for (( i=0 ; i<${#fileHandles[@]} ; i++ )); do
+				if [[ "$TMENU_RESULT" == "${fileHandles[$i]}" ]]; then
+					fileHandle="${fileHandles[$i]}"
+					break
+				fi
+			done
+
+			if [[ ! -z "$fileHandle" ]]; then
+				action.megaFile "$TMENU_RESULT"
+			fi
 			;;
 
 		"Detail")
