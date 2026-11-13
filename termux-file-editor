@@ -1244,7 +1244,7 @@ action.megaFile() {
 
 	actions+=( "Rename" "Usage" )
 
-	if [[ "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
+	if [[ $(grep -m 1 "$1" <<< "$allFiles" | sed -E s/"^.{4} +([0-9]+).*"/"\1"/) -gt 1 ]]; then
 		actions+=( "Versions" )
 	fi
 
@@ -1441,26 +1441,28 @@ tmenu.megaExplorer() {
 		fi
 
 		local prevIFS="$IFS"
-		local allFiles="$(mega-ls -a)"
+		local allFiles="$(mega-ls -lh --show-handles)"
+		local numDir=0
+		local numFile=0
 		while IFS= read -r line; do
-			if [[ "$line" == *' (folder)' ]]; then
-				file_list+=( "${line% (folder)}" )
-				MEGA_FILE_TYPES+=( "d" )
-			else
-				file_list+=( "${line% (folder*}" )
+			if [[ "$line" == 'dep'* ]]; then
 				MEGA_FILE_TYPES+=( "dep" )
+			else
+				MEGA_FILE_TYPES+=( "d" )
 			fi
-		done < <(grep -i "(folder.*$" <<< "$allFiles")
+			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:.+ (.+)$"/"\1"/ <<< "$line")" )
+			(( ++numDir ))
+		done < <(grep -i "^d" <<< "$allFiles")
 
 		while IFS= read -r line; do
-			if [[ "$line" != *' ('*'shared as exported'*')' ]]; then
-				file_list+=( "$(sed -E s/" \(.+ .+\)$"// <<< "$line")" )
-				MEGA_FILE_TYPES+=( "f" )
-			else
-				file_list+=( "$(sed -E s/" \(.+ shared as exported .+\)$"// <<< "$line")" )
+			if [[ "$line" == ?'ep'* ]]; then
 				MEGA_FILE_TYPES+=( "ep" )
+			else
+				MEGA_FILE_TYPES+=( "f" )
 			fi
-		done < <(grep -iv "(folder.*$" <<< "$allFiles")
+			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:.+ (.+)$"/"\1"/ <<< "$line")" )
+			(( ++numFile ))
+		done < <(grep -Eiv "^d|FLAGS" <<< "$allFiles")
 		IFS="$prevIFS"
 
 		for file in "${file_list[@]}"; do
