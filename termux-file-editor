@@ -1013,7 +1013,20 @@ action.megaDir() {
 		actions+=( "Move to Trash" )
 	fi
 
-	actions+=( "Rename" "New folder" "Usage" "Export Links" "Detail" )
+	actions+=( "Rename" "New folder" "Usage" )
+
+	if [[ "$1" == '.' ]]; then
+		for fileType in "${MEGA_FILE_TYPES[@]}"; do
+			if [[ "$fileType" == 'dep' || "$fileType" == 'ep' ]]; then
+				actions+=( "Export Links" )
+				break
+			fi
+		done
+	elif [[ "${MEGA_FILE_TYPES[$index]}" == 'dep' ]]; then
+		actions+=( "Export Links" )
+	fi
+
+	actions+=( "Detail" )
 
 	unset MEGA_FILE_TYPES
 	tmenu "${actions[@]}"
@@ -1244,6 +1257,10 @@ action.megaFile() {
 
 	actions+=( "Rename" "Usage" )
 
+	if [[ "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
+		actions+=( "Export Link" )
+	fi
+
 	if [[ $(grep -m 1 "$1" <<< "$allFiles" | sed -E s/"^.{4} +([0-9]+).*"/"\1"/) -gt 1 ]]; then
 		actions+=( "Versions" )
 	fi
@@ -1348,6 +1365,12 @@ action.megaFile() {
 
 		"Usage")
 			mega-du -h "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Export Link")
+			mega-export "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
