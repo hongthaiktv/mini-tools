@@ -932,11 +932,9 @@ megaLogin() {
 }
 
 getMegaUsedStorage() {
-	megaUsedStorage="$(mega-df -h | grep -iE 'storage' | sed -E s/^.{24}/'Usage: '/ | sed -E s/' '{23}/'  - '/)"
-}
-
-getMegaUsedTrashBin() {
-	megaUsedTrashBin="$(mega-df -h | grep -iE 'rubbish' | sed -E s/^.{24}/'Trash: '/ | sed -E s/' and'//)"
+	megaUsage="$(mega-df -h)"
+	megaUsedStorage="$(grep -i 'storage' <<< "$megaUsage" | sed -E s/^.{24}/'Usage: '/ | sed -E s/' '{23}/'  - '/)"
+	megaUsedTrashBin="$(grep -i 'rubbish' <<< "$megaUsage" | sed -E s/^.{24}/'Trash: '/ | sed -E s/' and'//)"
 }
 
 action.megaMenu() {
@@ -1092,7 +1090,6 @@ action.megaDir() {
 				else
 					unset prevItem
 				fi
-				getMegaUsedTrashBin
 				getMegaUsedStorage
 			fi
 			;;
@@ -1126,7 +1123,7 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
-					getMegaUsedTrashBin
+					getMegaUsedStorage
 					unset prevItem
 				fi
 			fi
@@ -1154,7 +1151,6 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
-					getMegaUsedTrashBin
 					getMegaUsedStorage
 					unset prevItem
 				fi
@@ -1311,7 +1307,7 @@ action.megaFile() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					getMegaUsedTrashBin
+					getMegaUsedStorage
 					unset prevItem
 				fi
 			fi
@@ -1330,7 +1326,6 @@ action.megaFile() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					getMegaUsedTrashBin
 					getMegaUsedStorage
 					unset prevItem
 				fi
@@ -1411,7 +1406,7 @@ tmenu.megaExplorer() {
 			mega-cd "$MEGASRC"
 			MEGAWDIR="$MEGASRC"
 		else
-			getMegaUsedTrashBin
+			getMegaUsedStorage
 		fi
 	else
 		getMegaUsedStorage
@@ -1507,16 +1502,10 @@ tmenu.megaExplorer() {
 				fi
 				mega-cd "$MEGASRC"
 				MEGAWDIR="$MEGASRC"
-				if [[ -z "$megaUsedStorage" ]]; then
-					getMegaUsedStorage
-				fi
 			else
 				MEGASRC="$MEGAWDIR"
 				mega-cd "//bin"
 				MEGAWDIR="//bin"
-				if [[ -z "$megaUsedTrashBin" ]]; then
-					getMegaUsedTrashBin
-				fi
 			fi
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "megaSlDst" ]]; then
