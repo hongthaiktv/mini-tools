@@ -942,7 +942,7 @@ action.megaMenu() {
 	local title="\033[41m MEGA MENU (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 14 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+m: Back)\n\n"
 	printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 
-	local menuList=( "Account Info" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" )
+	local menuList=( "Account Info" "Export Links (All)" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" )
 	unset MEGA_FILE_TYPES
 	tmenu "${menuList[@]}"
 
@@ -950,6 +950,28 @@ action.megaMenu() {
 		"Account Info")
 			mega-whoami -l
 			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Export Links (All)")
+			local exportTotal="$(mega-export '/' | grep -c "^[^ ]")"
+			printf "Total exported links: \033[1;32m%s\033[0m\n\n" "$exportTotal"
+
+			local prevIFS="$IFS"
+			while IFS= read -r line; do
+				local exportPath="$(sed -E s/"^(.+) \(.*"/"\1"/ <<< "$line")"
+				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
+				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
+				if [[ "$line" == *" (folder"* ]]; then
+					exportPath="\033[1;34m$exportPath\033[0m"
+				fi
+				if [[ ! -z "$exportAuthToken" ]]; then
+					exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
+				fi
+				printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
+			done < <(mega-export '/' | grep "^[^ ]")
+			IFS="$prevIFS"
+
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
@@ -985,7 +1007,7 @@ action.megaMenu() {
 			;;
 
 		"Transfer Logs")
-			mega-transfers --show-completed --limit=50 --output-cols=TYPE,SOURCEPATH,DESTINYPATH,PROGRESS
+			mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1013,20 +1035,30 @@ action.megaDir() {
 		actions+=( "Move to Trash" )
 	fi
 
-	actions+=( "Rename" "New folder" "Usage" )
+	actions+=( "Rename" "New folder" )
 
 	if [[ "$1" == '.' ]]; then
+		if [[ "$MEGAWDIR" != '/' ]]; then
+			actions+=( "Export" )
+		fi
+
 		for fileType in "${MEGA_FILE_TYPES[@]}"; do
 			if [[ "$fileType" == 'dep' || "$fileType" == 'ep' ]]; then
 				actions+=( "Export Links" )
 				break
 			fi
 		done
+
+		if [[ "$MEGAWDIR" != '/' ]]; then
+			actions+=( "Disable Export" )
+		fi
 	elif [[ "${MEGA_FILE_TYPES[$index]}" == 'dep' ]]; then
-		actions+=( "Export Links" )
+		actions+=( "Export Links" "Disable Export" )
+	else
+		actions+=( "Export" )
 	fi
 
-	actions+=( "Detail" )
+	actions+=( "Usage" "Detail" )
 
 	unset MEGA_FILE_TYPES
 	tmenu "${actions[@]}"
@@ -1198,6 +1230,52 @@ action.megaDir() {
 			fi
 			;;
 
+		"Export")
+			local msg="Export folder with \033[1;31m%s\033[0m? (y/n/C): "
+			printf "$msg" "writable"
+			read -rn1 key
+			echo
+			echo
+
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				mega-export -af --writable "$1"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			elif [[ "$key" == "n" || "$key" == "N" ]]; then
+				mega-export -af "$1"
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Export Links")
+			local exportTotal="$(mega-export "$1" | grep -c "^[^ ]")"
+			printf "Exported links: \033[1;32m%s\033[0m\n\n" "$exportTotal"
+
+			local prevIFS="$IFS"
+			while IFS= read -r line; do
+				local exportPath="$(sed -E s/"^(.+) \(.*"/"\1"/ <<< "$line")"
+				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
+				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
+				if [[ "$line" == *" (folder"* ]]; then
+					exportPath="\033[1;34m$exportPath\033[0m"
+				fi
+				if [[ ! -z "$exportAuthToken" ]]; then
+					exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
+				fi
+				printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
+			done < <(mega-export "$1" | grep "^[^ ]")
+			IFS="$prevIFS"
+
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Disable Export")
+			mega-export -d "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
 		"Usage")
 			local item="$1"
 			if [[ "$item" == '.' ]]; then
@@ -1210,12 +1288,6 @@ action.megaDir() {
 				fi
 			fi
 			mega-du -h "$item"
-			echo
-			read -rsn1 -p "Press any key to continue..." key
-			;;
-
-		"Export Links")
-			mega-export "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1255,17 +1327,19 @@ action.megaFile() {
 		actions+=( "Move to Trash" )
 	fi
 
-	actions+=( "Rename" "Usage" )
+	actions+=( "Rename" )
 
 	if [[ "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
-		actions+=( "Export Link" )
+		actions+=( "Export Link" "Disable Export" )
+	else
+		actions+=( "Export" )
 	fi
 
 	if [[ $(grep -m 1 "$1" <<< "$allFiles" | sed -E s/"^.{4} +([0-9]+).*"/"\1"/) -gt 1 ]]; then
 		actions+=( "Versions" )
 	fi
 
-	actions+=( "Detail" )
+	actions+=( "Usage" "Detail" )
 
 	unset MEGA_FILE_TYPES
 	tmenu "${actions[@]}"
@@ -1363,14 +1437,33 @@ action.megaFile() {
 			fi
 			;;
 
-		"Usage")
-			mega-du -h "$1"
+		"Export")
+			mega-export -af "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
 		"Export Link")
-			mega-export "$1"
+			local prevIFS="$IFS"
+			while IFS= read -r line; do
+				local exportPath="$(sed -E s/"^(.+) \(.*"/"\1"/ <<< "$line")"
+				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
+				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
+				if [[ "$line" == *" (folder"* ]]; then
+					exportPath="\033[1;34m$exportPath\033[0m"
+				fi
+				if [[ ! -z "$exportAuthToken" ]]; then
+					exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
+				fi
+				printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
+			done < <(mega-export "$1" | grep "^[^ ]")
+			IFS="$prevIFS"
+
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Disable Export")
+			mega-export -d "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -1394,6 +1487,12 @@ action.megaFile() {
 			if [[ ! -z "$fileHandle" ]]; then
 				action.megaFile "$TMENU_RESULT"
 			fi
+			;;
+
+		"Usage")
+			mega-du -h "$1"
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 			;;
 
 		"Detail")
@@ -1444,17 +1543,17 @@ tmenu.megaExplorer() {
 			prevItem=""
 		fi
 
-		local prevIFS="$IFS"
 		local allFiles="$(mega-ls -lh --show-handles)"
 		local numDir=0
 		local numFile=0
+		local prevIFS="$IFS"
 		while IFS= read -r line; do
 			if [[ "$line" == 'dep'* ]]; then
 				MEGA_FILE_TYPES+=( "dep" )
 			else
 				MEGA_FILE_TYPES+=( "d" )
 			fi
-			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:.+ (.+)$"/"\1"/ <<< "$line")" )
+			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:[^ ]+ (.+)$"/"\1"/ <<< "$line")" )
 			(( ++numDir ))
 		done < <(grep -i "^d" <<< "$allFiles")
 
@@ -1464,7 +1563,7 @@ tmenu.megaExplorer() {
 			else
 				MEGA_FILE_TYPES+=( "f" )
 			fi
-			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:.+ (.+)$"/"\1"/ <<< "$line")" )
+			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:[^ ]+ (.+)$"/"\1"/ <<< "$line")" )
 			(( ++numFile ))
 		done < <(grep -Eiv "^d|FLAGS" <<< "$allFiles")
 		IFS="$prevIFS"
@@ -1564,7 +1663,7 @@ tmenu.megaExplorer() {
 				mega-cd "$TMENU_RESULT"
 				MEGAWDIR="$(mega-pwd)"
 			fi
-		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && ( "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ) ]]; then
 			action.megaFile "$TMENU_RESULT"
 		fi
 	done
