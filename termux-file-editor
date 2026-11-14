@@ -1000,23 +1000,28 @@ megaLogin() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					sed -Ei s/"(megaLoginUser: ).*"/"\1$megauser"/ "$HOME/.tfe/config"
+					sed -Ei s/"^(megaLoginUser: ).*"/"\1$megauser"/ "$HOME/.tfe/config"
 					break
 				fi
 				;;
 
 			"Shared Link")
-				read -rep "Shared link: (cancel) " megaLoginLink
-				if [[ -z "$megaLoginLink" ]]; then
-					continue
+				local megaShortLink="new"
+				if [[ ! -z "$megaLoginLink" && "$megaLoginLink" != "null" ]]; then
+					megaShortLink="$(grep -Eo "^.{12}" <<< "$megaLoginLink")...$(grep -Eo ".{5}$" <<< "$megaLoginLink")"
+				fi
+
+				read -rep "Shared link: ($megaShortLink) " megaLink
+				if [[ -z "$megaLink" && "$megaShortLink" != 'new' ]]; then
+					megaLink="$megaLoginLink"
 				fi
 				read -rep "Auth Key: (none) " authKey
 				echo
 
 				if [[ -z "$authKey" ]]; then
-					mega-login "$megaLoginLink"
+					mega-login "$megaLink"
 				else
-					mega-login "$megaLoginLink" --auth-key="$authKey"
+					mega-login "$megaLink" --auth-key="$authKey"
 				fi
 
 				if [[ $? -ne 0 ]]; then
@@ -1024,6 +1029,7 @@ megaLogin() {
 					read -rsn1 -p "Press any key to continue..." key
 				else
 					megauser='Shared Link'
+					sed -Ei s/"^(megaLoginLink: ).*"/"\1$megaLink"/ "$HOME/.tfe/config"
 					break
 				fi
 				;;
