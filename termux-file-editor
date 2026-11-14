@@ -904,34 +904,106 @@ tmenu.fileExplorer() {
 }
 
 megaLogin() {
-	megauser="$(mega-whoami 2> /dev/null)"
-	if [[ $? -ne 0 ]]; then
-		read -rep "Username: (chickenvnn) " megauser
-		read -rsep "Password: " megapass
-		read -rep "2FA code: (none) " mega2fa
-		echo
-
-		if [[ -z "$megauser" ]]; then
-			megauser="chickenvnn@gmail.com"
-		fi
-
-		if [[ -z "$mega2fa" ]]; then
-			mega-login "$megauser" "$megapass"
-		else
-			mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
-		fi
-	fi
-
+	mega-session &> /dev/null
 	if [[ $? -eq 0 ]]; then
-		megauser=${megauser#Account e-mail: }
-	else
-		echo
-		read -rsn1 -p "Press any key to continue..." key
-		return -1
+		megauser="$(mega-whoami 2> /dev/null)"
+		if [[ $? -eq 0 ]]; then
+			megauser=${megauser#Account e-mail: }
+		else
+			megauser='Shared Link'
+		fi
+		return 0
 	fi
+
+	until [[ "$TMENU_RESULT" == 'EXIT' || "$TMENU_RESULT" == 'MAINMENU' ]]; do
+		clear
+		local title="\033[41m #### MEGA LOGIN #### \033[0m\n\033[41m -------------------- \033[0m\n\n"
+		printf "$title"
+		local loginMethods=( "Email and Password" "Shared Link" "Session ID" )
+		unset MEGA_FILE_TYPES
+		tmenu "${loginMethods[@]}"
+
+		case "$TMENU_RESULT" in
+			"$ESC_KEY")
+				return -1
+				;;
+
+			"Email and Password")
+				read -rep "Username: (chickenvnn) " megauser
+				read -rsep "Password: " megapass
+				read -rep "2FA code: (none) " mega2fa
+				echo
+
+				if [[ -z "$megauser" ]]; then
+					megauser="chickenvnn@gmail.com"
+				fi
+
+				if [[ -z "$mega2fa" ]]; then
+					mega-login "$megauser" "$megapass"
+				else
+					mega-login --auth-code="$mega2fa" "$megauser" "$megapass"
+				fi
+
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					break
+				fi
+				;;
+
+			"Shared Link")
+				read -rep "Shared link: (cancel) " loginLink
+				if [[ -z "$loginLink" ]]; then
+					continue
+				fi
+				read -rep "Auth Key: (none) " authKey
+				echo
+
+				if [[ -z "$authKey" ]]; then
+					mega-login "$loginLink"
+				else
+					mega-login "$loginLink" --auth-key="$authKey"
+				fi
+
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					megauser='Shared Link'
+					break
+				fi
+				;;
+
+			"Session ID")
+				read -rep "Session ID: (cancel) " loginSession
+				if [[ -z "$loginSession" ]]; then
+					continue
+				fi
+				echo
+				mega-login "$loginSession"
+
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					megauser="$(mega-whoami 2> /dev/null)"
+					if [[ $? -eq 0 ]]; then
+						megauser=${megauser#Account e-mail: }
+					else
+						megauser='Shared Link'
+					fi
+					break
+				fi
+				;;
+		esac
+	done
 }
 
 getMegaUsedStorage() {
+	if [[ "$megauser" == 'Shared Link' ]]; then
+		return -1
+	fi
 	megaUsage="$(mega-df -h)"
 	megaUsedStorage="$(grep -i 'storage' <<< "$megaUsage" | sed -E s/^.{24}/'Usage: '/ | sed -E s/' '{23}/'  - '/)"
 	megaUsedInbox="$(grep -i 'inbox' <<< "$megaUsage" | sed -E s/^.{24}/'Inbox: '/ | sed -E s/' and'//)"
@@ -943,7 +1015,7 @@ action.megaMenu() {
 	local title="\033[41m MEGA MENU (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 14 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+m: Back)\n\n"
 	printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 
-	local menuList=( "Account Info" "Inbox" "Export Links (All)" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" "Logout" )
+	local menuList=( "Account Info" "Export Links (All)" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" "Logout" )
 	unset MEGA_FILE_TYPES
 	tmenu "${menuList[@]}"
 
@@ -954,17 +1026,13 @@ action.megaMenu() {
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
-		"Inbox")
-			mega-cd '//in'
-			;;
-
 		"Export Links (All)")
 			local exportTotal="$(mega-export '/' | grep -c "^[^ ]")"
 			printf "Total exported links: \033[1;32m%s\033[0m\n\n" "$exportTotal"
 
 			local prevIFS="$IFS"
 			while IFS= read -r line; do
-				local exportPath="$(sed -E s/"^(.+) \(.*"/"\1"/ <<< "$line")"
+				local exportPath="$(sed -E s/"^(.+) \([^s].*"/"\1"/ <<< "$line")"
 				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
 				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
 				if [[ "$line" == *" (folder"* ]]; then
@@ -1282,7 +1350,7 @@ action.megaDir() {
 
 			local prevIFS="$IFS"
 			while IFS= read -r line; do
-				local exportPath="$(sed -E s/"^(.+) \(.*"/"\1"/ <<< "$line")"
+				local exportPath="$(sed -E s/"^(.+) \([^s].*"/"\1"/ <<< "$line")"
 				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
 				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
 				if [[ "$line" == *" (folder"* ]]; then
@@ -1474,7 +1542,7 @@ action.megaFile() {
 		"Export Link")
 			local prevIFS="$IFS"
 			while IFS= read -r line; do
-				local exportPath="$(sed -E s/"^(.+) \(.*"/"\1"/ <<< "$line")"
+				local exportPath="$(sed -E s/"^(.+) \([^s].*"/"\1"/ <<< "$line")"
 				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
 				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
 				if [[ "$line" == *" (folder"* ]]; then
