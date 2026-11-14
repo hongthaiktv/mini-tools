@@ -943,7 +943,7 @@ action.megaMenu() {
 	local title="\033[41m MEGA MENU (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 14 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+m: Back)\n\n"
 	printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 
-	local menuList=( "Account Info" "Inbox" "Export Links (All)" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" )
+	local menuList=( "Account Info" "Inbox" "Export Links (All)" "Import Link" "Session ID" "Close All Sessions" "Mount" "Transfer Logs" "Logout" )
 	unset MEGA_FILE_TYPES
 	tmenu "${menuList[@]}"
 
@@ -1015,6 +1015,29 @@ action.megaMenu() {
 			mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS
 			echo
 			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Logout")
+			local msg="Clear the \033[1;31m%s\033[0m and \033[1;31m%s\033[0m? (y/n/C): "
+			printf "$msg" "current session" "cached data"
+			read -rn1 key
+			echo
+			echo
+
+			if [[ "$key" == "y" || "$key" == "Y" ]]; then
+				mega-logout
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					TMENU_RESULT='MAINMENU'
+				fi
+			elif [[ "$key" == "n" || "$key" == "N" ]]; then
+				mega-logout --keep-session
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+				TMENU_RESULT='MAINMENU'
+			fi
 			;;
 	esac
 }
@@ -1536,7 +1559,7 @@ tmenu.megaExplorer() {
 		getMegaUsedStorage
 	fi
 
-	until [[ "$TMENU_RESULT" == "EXIT" ]]; do
+	until [[ "$TMENU_RESULT" == 'EXIT' || "$TMENU_RESULT" == 'MAINMENU' ]]; do
 		clear
 		local file_list=( "." ".." )
 		MEGA_FILE_TYPES=( "d" "d" )
@@ -1639,7 +1662,9 @@ tmenu.megaExplorer() {
 				mega-cd "$MEGASRC"
 				MEGAWDIR="$MEGASRC"
 			else
-				MEGASRC="$MEGAWDIR"
+				if [[ "$MEGAWDIR" != '//bin'* && "$MEGAWDIR" != '//in'* ]]; then
+					MEGASRC="$MEGAWDIR"
+				fi
 				mega-cd "//in"
 				MEGAWDIR="//in"
 			fi
@@ -1651,7 +1676,9 @@ tmenu.megaExplorer() {
 				mega-cd "$MEGASRC"
 				MEGAWDIR="$MEGASRC"
 			else
-				MEGASRC="$MEGAWDIR"
+				if [[ "$MEGAWDIR" != '//bin'* && "$MEGAWDIR" != '//in'* ]]; then
+					MEGASRC="$MEGAWDIR"
+				fi
 				mega-cd "//bin"
 				MEGAWDIR="//bin"
 			fi
