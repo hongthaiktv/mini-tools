@@ -2,8 +2,6 @@
 
 source /data/data/com.termux/files/home/bin/tmenu.sh
 
-#tmenu -c aaa bbb -cns ccc -s
-
 #			FG(N)	BG(N)	FG(L)	BG(L)
 #	Black	30		40		90		100
 #	Red		31		41		91		101
@@ -18,6 +16,53 @@ WDIR="$(pwd)"
 ESC_KEY=$'\033'
 ERROR_COLOR=91
 CMD_COLOR=96
+
+
+tmenu.loadConfig() {
+	if [[ -d "$HOME/.tfe" ]]; then
+		if [[ -f "$HOME/.tfe/config" ]]; then
+			prevIFS="$IFS"
+			while IFS= read -r line; do
+				local configName="$(grep -Eo "^[^:]+" <<< "$line")"
+				local configValue="$(sed -E s/"$configName: "// <<< "$line")"
+				case "$configName" in
+					"megaLoginUser")
+						megaLoginUser="$configValue"
+						;;
+
+					"megaLoginLink")
+						megaLoginLink="$configValue"
+						;;
+				esac
+			done < "$HOME/.tfe/config"
+			IFS="$prevIFS"
+		else
+			echo
+			local msg="File \033[1;31m%s\033[0m not found.\n"
+			printf "$msg" "config"
+			read -rn1 -p "Create new one? (Y/n): " key
+
+			if [[ -z "$key" || "$key" == "y" || "$key" == "Y" ]]; then
+				echo "srcDir: $HOME" > "$HOME/.tfe/config"
+				echo "dstDir: $HOME" >> "$HOME/.tfe/config"
+				echo "megaSrcDir: /" >> "$HOME/.tfe/config"
+				echo "megaDstDir: /" >> "$HOME/.tfe/config"
+				echo "megaLoginUser: null" >> "$HOME/.tfe/config"
+				echo "megaLoginLink: null" >> "$HOME/.tfe/config"
+			fi
+		fi
+	else
+		mkdir "$HOME/.tfe"
+		echo "srcDir: $HOME" > "$HOME/.tfe/config"
+		echo "dstDir: $HOME" >> "$HOME/.tfe/config"
+		echo "megaSrcDir: /" >> "$HOME/.tfe/config"
+		echo "megaDstDir: /" >> "$HOME/.tfe/config"
+		echo "megaLoginUser: null" >> "$HOME/.tfe/config"
+		echo "megaLoginLink: null" >> "$HOME/.tfe/config"
+	fi
+}
+
+tmenu.loadConfig
 
 tmenu.hashCheck() {
 	declare -a hashMenu
@@ -664,8 +709,9 @@ action.file() {
 			;;
 
 		"Delete")
-			local msg="Delete \"$1\"? (y/N): "
-			read -rn1 -p "$msg" key
+			local msg="Delete \033[1;31m%s\033[0m? (y/N): "
+			printf "$msg" "$1"
+			read -rn1 key
 			echo
 			echo
 
@@ -904,6 +950,7 @@ tmenu.fileExplorer() {
 }
 
 megaLogin() {
+	tmenu.loadConfig
 	mega-session &> /dev/null
 	if [[ $? -eq 0 ]]; then
 		megauser="$(mega-whoami 2> /dev/null)"
@@ -929,13 +976,18 @@ megaLogin() {
 				;;
 
 			"Email and Password")
-				read -rep "Username: (chickenvnn) " megauser
+				local megaLoginName="new"
+				if [[ ! -z "$megaLoginUser" && "$megaLoginUser" != "null" ]]; then
+					megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
+				fi
+
+				read -rep "Username: ($megaLoginName) " megauser
 				read -rsep "Password: " megapass
 				read -rep "2FA code: (none) " mega2fa
 				echo
 
-				if [[ -z "$megauser" ]]; then
-					megauser="chickenvnn@gmail.com"
+				if [[ -z "$megauser" && "$megaLoginName" != 'new' ]]; then
+					megauser="$megaLoginUser"
 				fi
 
 				if [[ -z "$mega2fa" ]]; then
@@ -948,22 +1000,23 @@ megaLogin() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
+					sed -Ei s/"(megaLoginUser: ).*"/"\1$megauser"/ "$HOME/.tfe/config"
 					break
 				fi
 				;;
 
 			"Shared Link")
-				read -rep "Shared link: (cancel) " loginLink
-				if [[ -z "$loginLink" ]]; then
+				read -rep "Shared link: (cancel) " megaLoginLink
+				if [[ -z "$megaLoginLink" ]]; then
 					continue
 				fi
 				read -rep "Auth Key: (none) " authKey
 				echo
 
 				if [[ -z "$authKey" ]]; then
-					mega-login "$loginLink"
+					mega-login "$megaLoginLink"
 				else
-					mega-login "$loginLink" --auth-key="$authKey"
+					mega-login "$megaLoginLink" --auth-key="$authKey"
 				fi
 
 				if [[ $? -ne 0 ]]; then
