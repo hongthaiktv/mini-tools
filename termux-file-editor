@@ -1102,9 +1102,11 @@ action.megaMenu() {
 				fi
 			elif [[ "$key" == "n" || "$key" == "N" ]]; then
 				mega-logout --keep-session
+				if [[ $? -eq 0 ]]; then
+					TMENU_RESULT='MAINMENU'
+				fi
 				echo
 				read -rsn1 -p "Press any key to continue..." key
-				TMENU_RESULT='MAINMENU'
 			fi
 			;;
 	esac
@@ -1749,6 +1751,14 @@ tmenu.megaExplorer() {
 				fi
 				mega-cd "//bin"
 				MEGAWDIR="//bin"
+			fi
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'l' ]]; then
+			mega-logout
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			else
+				TMENU_RESULT='MAINMENU'
 			fi
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "megaSlDst" ]]; then
