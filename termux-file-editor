@@ -24,7 +24,11 @@ tmenu.loadConfig() {
 			prevIFS="$IFS"
 			while IFS= read -r line; do
 				local configName="$(grep -Eo "^[^:]+" <<< "$line")"
-				local configValue="$(sed -E s/"$configName: "// <<< "$line")"
+				local configValue="$(sed -E s/"$configName: "// <<< "$line" | sed -E "s/\|[^|]*$//")"
+				local configExtraValue=""
+				if [[ "$line" =~ '|'[^|]+$ ]]; then
+					configExtraValue="$(grep -Eo "[^|]+$" <<< "$line")"
+				fi
 				case "$configName" in
 					"megaLoginUser")
 						megaLoginUser="$configValue"
@@ -32,6 +36,7 @@ tmenu.loadConfig() {
 
 					"megaLoginLink")
 						megaLoginLink="$configValue"
+						megaLoginLinkDirName="$configExtraValue"
 						;;
 				esac
 			done < "$HOME/.tfe/config"
@@ -981,7 +986,10 @@ megaLogin() {
 					megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
 				fi
 
-				read -rep "Username: ($megaLoginName) " megauser
+				local msg="Username: (\033[1;32m%s\033[0m)"
+				printf "$msg" "$megaLoginName"
+
+				read -rep ' ' megauser
 				read -rsep "Password: " megapass
 				read -rep "2FA code: (none) " mega2fa
 				echo
@@ -1006,12 +1014,27 @@ megaLogin() {
 				;;
 
 			"Shared Link")
+				local megaLinkDirName=""
 				local megaShortLink="new"
+
+				if [[ ! -z "$megaLoginLinkDirName" ]]; then
+					megaLinkDirName="$megaLoginLinkDirName"
+				fi
+
 				if [[ ! -z "$megaLoginLink" && "$megaLoginLink" != "null" ]]; then
 					megaShortLink="$(grep -Eo "^.{12}" <<< "$megaLoginLink")...$(grep -Eo ".{5}$" <<< "$megaLoginLink")"
 				fi
 
-				read -rep "Shared link: ($megaShortLink) " megaLink
+				local msg=""
+				if [[ -z "$megaLinkDirName" ]]; then
+					msg="Shared link: (\033[1;36m%s\033[0m)"
+					printf "$msg" "$megaShortLink"
+				else
+					msg="Shared link: (\033[1;34m%s\033[0m | \033[1;36m%s\033[0m)"
+					printf "$msg" "$megaLinkDirName" "$megaShortLink"
+				fi
+
+				read -rep ' ' megaLink
 				if [[ -z "$megaLink" && "$megaShortLink" != 'new' ]]; then
 					megaLink="$megaLoginLink"
 				fi
@@ -1029,7 +1052,8 @@ megaLogin() {
 					read -rsn1 -p "Press any key to continue..." key
 				else
 					megauser='Shared Link'
-					sed -Ei s/"^(megaLoginLink: ).*"/"\1$megaLink"/ "$HOME/.tfe/config"
+					megaLinkDirName="$(basename "$(mega-pwd)")"
+					sed -Ei "s|^(megaLoginLink: ).*|\1$megaLink\|$megaLinkDirName|" "$HOME/.tfe/config"
 					break
 				fi
 				;;
@@ -1060,6 +1084,9 @@ megaLogin() {
 }
 
 getMegaUsedStorage() {
+	unset megaUsedStorage
+	unset megaUsedInbox
+	unset megaUsedTrashBin
 	if [[ "$megauser" == 'Shared Link' ]]; then
 		return -1
 	fi
