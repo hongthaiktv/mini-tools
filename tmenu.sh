@@ -300,6 +300,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 							"$ARROW_UP")
 								if [[ "$MENU_ORDER" -gt "1" ]]; then
 									(( --MENU_ORDER ))
+									if [[ "${MENU_LIST[$MENU_ORDER]}" == '_____'* || -z "${MENU_LIST[$MENU_ORDER]}" ]]; then
+										(( --MENU_ORDER ))
+										if [[ "${MENU_LIST[$MENU_ORDER]}" == '_____'* || -z "${MENU_LIST[$MENU_ORDER]}" ]]; then
+											(( --MENU_ORDER ))
+										fi
+									fi
 									tmenu.select "${MENU_LIST[@]}"
 								fi
 								;;
@@ -307,6 +313,12 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 							"$ARROW_DOWN")
 								if [[ $MENU_ORDER -lt $(( ${#MENU_LIST[@]} - 1 )) ]]; then
 									(( ++MENU_ORDER ))
+									if [[ "${MENU_LIST[$MENU_ORDER]}" == '_____'* || -z "${MENU_LIST[$MENU_ORDER]}" ]]; then
+										(( ++MENU_ORDER ))
+										if [[ "${MENU_LIST[$MENU_ORDER]}" == '_____'* || -z "${MENU_LIST[$MENU_ORDER]}" ]]; then
+											(( ++MENU_ORDER ))
+										fi
+									fi
 									tmenu.select "${MENU_LIST[@]}"
 								fi
 								;;

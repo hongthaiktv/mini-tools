@@ -971,7 +971,7 @@ megaLogin() {
 		clear
 		local title="\033[41m #### MEGA LOGIN #### \033[0m\n\033[41m -------------------- \033[0m\n\n"
 		printf "$title"
-		local loginMethods=( "Email and Password" "Shared Link" "Session ID" )
+		local loginMethods=( "Email and Password" "Shared Link" "Session ID" "____________________" "" "Create account" )
 		unset MEGA_FILE_TYPES
 		tmenu "${loginMethods[@]}"
 
@@ -1068,10 +1068,10 @@ megaLogin() {
 
 			"Session ID")
 				read -rep "Session ID: (cancel) " loginSession
+				echo
 				if [[ -z "$loginSession" || "$loginSession" == 'c' || "$loginSession" == 'C' ]]; then
 					continue
 				fi
-				echo
 				mega-login "$loginSession"
 
 				if [[ $? -ne 0 ]]; then
@@ -1085,6 +1085,57 @@ megaLogin() {
 						megauser='Shared Link'
 					fi
 					break
+				fi
+				;;
+
+			"Create account")
+				local username
+				local password
+				local passwordValidate
+				local accountname
+
+				read -rep "User name (email): (cancel) " username
+				if [[ -z "$username" || "$username" == 'c' || "$username" == 'C' ]]; then
+					continue
+				fi
+
+				while :; do
+					read -rsep "Password: " password
+					read -rsep "Retype password: " passwordValidate
+
+					if [[ -z "$password" || -z "$passwordValidate" ]]; then
+						echo
+						printf "\033[1;31m%s\033[0m\n" "Password must not null."
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						printf "\033[6A\033[0J"
+					elif [[ "$password" != "$passwordValidate" ]]; then
+						echo
+						printf "\033[1;31m%s\033[0m\n" "Password didn't match."
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						echo
+						printf "\033[6A\033[0J"
+					else
+						break
+					fi
+				done
+
+				read -rep "Account name: " accountname
+				echo
+
+				mega-signup "$username" "$password" --name="$accountname"
+
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					echo
+					printf "\033[1;32m%s\033[0m\n" "Account created successful."
+					printf "Please check your email \033[1;36m%s\033[0m to verify.\n" "$username"
+					echo
+					read -rsn1 -p "Press any key to continue..." key
 				fi
 				;;
 		esac
@@ -1102,6 +1153,16 @@ getMegaUsedStorage() {
 		megaUsedTrashBin="$(grep -i 'rubbish' <<< "$megaUsage" | sed -E s/^.{24}/'Trash: '/ | sed -E s/' and'//)"
 	else
 		megaUsedStorage="$(mega-pwd | sed -E "s|^\/([^/]*).*|\1|")"
+	fi
+}
+
+action.megaFind() {
+	local pattern
+	read -rep 'Mega Find: (cancel) ' pattern
+	if [[ ! -z "$pattern" ]]; then
+		mega-find '/' -l --pattern="*$pattern*" --show-handles
+		echo
+		read -rsn1 -p "Press any key to continue..." key
 	fi
 }
 
@@ -1157,8 +1218,21 @@ action.megaMenu() {
 			;;
 
 		"Import Link")
-			echo
-			read -rsn1 -p "Press any key to continue..." key
+			read -rep 'Shared link: (cancel) ' megaLink
+			if [[ ! -z "$megaLink" ]]; then
+				read -rsep 'Password protected: (none) ' passwordLink
+
+				if [[ -z "$passwordLink" ]]; then
+					mega-import "$megaLink" "$1"
+				else
+					mega-import "$megaLink" --password="$passwordLink" "$1"
+				fi
+
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+			fi
 			;;
 
 		"Session ID")
@@ -1253,7 +1327,13 @@ action.megaDir() {
 		actions+=( "Rename" )
 	fi
 
-	actions+=( "New folder" )
+	actions+=( "New folder" "Find" )
+
+	if [[ "$MEGAWDIR" != '/' || "$MEGAWDIR" == '/' && "$1" != '.' ]]; then
+		if [[ "$megauser" != 'Shared Link' ]]; then
+			actions+=( "Import Link" )
+		fi
+	fi
 
 	if [[ "$1" == '.' ]]; then
 		if [[ "$MEGAWDIR" != '/' ]]; then
@@ -1461,6 +1541,28 @@ action.megaDir() {
 			if [[ $? -ne 0 ]]; then
 				echo
 				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Find")
+			action.megaFind
+			;;
+
+		"Import Link")
+			read -rep 'Shared link: (cancel) ' megaLink
+			if [[ ! -z "$megaLink" ]]; then
+				read -rsep 'Password protected: (none) ' passwordLink
+
+				if [[ -z "$passwordLink" ]]; then
+					mega-import "$megaLink" "$1"
+				else
+					mega-import "$megaLink" --password="$passwordLink" "$1"
+				fi
+
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
 			fi
 			;;
 
@@ -1873,11 +1975,7 @@ tmenu.megaExplorer() {
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'m' ]]; then
 			action.megaMenu
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'f' ]]; then
-			if [[ "$MEGASRC" == '//bin'* || "$MEGASRC" == '//in'* ]]; then
-				MEGASRC="/"
-			fi
-			mega-cd "$MEGASRC"
-			MEGAWDIR="$MEGASRC"
+			action.megaFind
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'i' ]]; then
 			if [[ "$MEGAWDIR" == '//in'* ]]; then
 				if [[ "$MEGASRC" == '//bin'* || "$MEGASRC" == '//in'* ]]; then
