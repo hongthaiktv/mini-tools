@@ -1292,7 +1292,9 @@ action.megaDir() {
 			tmenu.fileExplorer "slFile"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-put "$TMENU_RESULT" "$1"
-				getMegaUsedStorage
+				if [[ "$megauser" != 'Shared Link' ]]; then
+					getMegaUsedStorage
+				fi
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -1317,33 +1319,32 @@ action.megaDir() {
 			tmenu.megaExplorer "megaSlDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-cp "$1" "$TMENU_RESULT"
-				if [[ $? -eq 0 ]]; then
-					echo "Copy finished: $TMENU_RESULT/$1"
-					getMegaUsedStorage
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					if [[ "$megauser" != 'Shared Link' ]]; then
+						getMegaUsedStorage
+					fi
 				fi
-				echo
-				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
 		"Move")
-			local movedPath=""
 			tmenu.megaExplorer "megaSlDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-mv "$1" "$TMENU_RESULT"
 				if [[ $? -eq 0 ]]; then
-					movedPath="$TMENU_RESULT/$1"
 					if [[ "$1" == '.' ]]; then
 						MEGAWDIR="$(mega-pwd)"
 						if [[ "$megauser" == 'Shared Link' ]]; then
 							MEGAWDIR="$(sed -E "s|^\/[^/]*\/?|\/|" <<< "$MEGAWDIR")"
 						fi
-						movedPath="$MEGAWDIR"
 					fi
-					echo "Move finished: $movedPath"
+				else
+					echo
+					read -rsn1 -p "Press any key to continue..." key
 				fi
-				echo
-				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
@@ -1362,7 +1363,9 @@ action.megaDir() {
 				else
 					unset prevItem
 				fi
-				getMegaUsedStorage
+				if [[ "$megauser" != 'Shared Link' ]]; then
+					getMegaUsedStorage
+				fi
 			fi
 			;;
 
@@ -1395,7 +1398,9 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
-					getMegaUsedStorage
+					if [[ "$megauser" != 'Shared Link' ]]; then
+						getMegaUsedStorage
+					fi
 					unset prevItem
 				fi
 			fi
@@ -1423,7 +1428,9 @@ action.megaDir() {
 						mega-cd "$parentDir"
 						MEGAWDIR="$parentDir"
 					fi
-					getMegaUsedStorage
+					if [[ "$megauser" != 'Shared Link' ]]; then
+						getMegaUsedStorage
+					fi
 					unset prevItem
 				fi
 			fi
@@ -1595,12 +1602,14 @@ action.megaFile() {
 			tmenu.megaExplorer "megaSlDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-cp "$1" "$TMENU_RESULT"
-				if [[ $? -eq 0 ]]; then
-					echo "Copy finished: $TMENU_RESULT/$1"
-					getMegaUsedStorage
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				else
+					if [[ "$megauser" != 'Shared Link' ]]; then
+						getMegaUsedStorage
+					fi
 				fi
-				echo
-				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
@@ -1608,11 +1617,10 @@ action.megaFile() {
 			tmenu.megaExplorer "megaSlDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-mv "$1" "$TMENU_RESULT"
-				if [[ $? -eq 0 ]]; then
-					echo "Move finished: $TMENU_RESULT/$1"
+				if [[ $? -ne 0 ]]; then
+					echo
+					read -rsn1 -p "Press any key to continue..." key
 				fi
-				echo
-				read -rsn1 -p "Press any key to continue..." key
 			fi
 			;;
 
@@ -1629,7 +1637,9 @@ action.megaFile() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					getMegaUsedStorage
+					if [[ "$megauser" != 'Shared Link' ]]; then
+						getMegaUsedStorage
+					fi
 					unset prevItem
 				fi
 			fi
@@ -1648,7 +1658,9 @@ action.megaFile() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					getMegaUsedStorage
+					if [[ "$megauser" != 'Shared Link' ]]; then
+						getMegaUsedStorage
+					fi
 					unset prevItem
 				fi
 			fi
