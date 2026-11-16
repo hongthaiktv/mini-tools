@@ -1231,21 +1231,29 @@ action.megaDir() {
 		actions+=( "Download to \"$prevDST\"" )
 	fi
 
-	actions+=( "Download" "Copy" "Move" )
+	actions+=( "Download" )
+
+	if [[ "$MEGAWDIR" != '/' || "$MEGAWDIR" == '/' && "$1" != '.' ]]; then
+		actions+=( "Copy" "Move" )
+	fi
 
 	if [[ "$1" == '.' && "$MEGAWDIR" == '//bin' ]]; then
 		actions+=( "Empty Trash" )
 	elif [[ "$MEGAWDIR" == '//bin'* ]]; then
 		actions+=( "Delete" )
 	else
-		if [[ "$megauser" != 'Shared Link' ]]; then
+		if [[ ("$megauser" != 'Shared Link' && "$MEGAWDIR" != '/') || ("$megauser" != 'Shared Link' && "$MEGAWDIR" == '/' && "$1" != '.') ]]; then
 			actions+=( "Move to Trash" )
-		else
+		elif [[ ("$megauser" == 'Shared Link' && "$MEGAWDIR" != '/') || ("$megauser" == 'Shared Link' && "$MEGAWDIR" == '/' && "$1" != '.') ]]; then
 			actions+=( "Delete" )
 		fi
 	fi
 
-	actions+=( "Rename" "New folder" )
+	if [[ "$MEGAWDIR" != '/' || "$MEGAWDIR" == '/' && "$1" != '.' ]]; then
+		actions+=( "Rename" )
+	fi
+
+	actions+=( "New folder" )
 
 	if [[ "$1" == '.' ]]; then
 		if [[ "$MEGAWDIR" != '/' ]]; then
@@ -1543,14 +1551,18 @@ action.megaFile() {
 	if [[ "$MEGAWDIR" == '//bin'* ]]; then
 		actions+=( "Delete" )
 	else
-		actions+=( "Move to Trash" )
+		if [[ "$megauser" != 'Shared Link' ]]; then
+			actions+=( "Move to Trash" )
+		else
+			actions+=( "Delete" )
+		fi
 	fi
 
 	actions+=( "Rename" )
 
 	if [[ "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
 		actions+=( "Export Link" "Disable Export" )
-	else
+	elif [[ "$megauser" != 'Shared Link' ]]; then
 		actions+=( "Export" )
 	fi
 
