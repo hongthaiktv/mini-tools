@@ -98,7 +98,9 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 
 		if [[ -z $1 ]]; then
 			echo
+			printf "\033[?25h"
 			read -rep "Search: " search
+			printf "\033[?25l"
 			echo
 			pattern=*"$search"*
 		else
@@ -267,13 +269,17 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 						;;
 
 					"c"|"C")
+						printf "\033[?25h"
 						echo
 						read -rep "Command: " cmd
-						echo
-						eval "$cmd"
-						echo
-						read -rsn1 -p "Press any key to continue..." key
-						echo
+						printf "\033[?25l"
+						if [[ ! -z "$cmd" ]]; then
+							echo
+							eval "$cmd"
+							echo
+							read -rsn1 -p "Press any key to continue..." key
+							echo
+						fi
 						break
 						;;
 

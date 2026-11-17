@@ -1132,7 +1132,7 @@ megaLogin() {
 					read -rsn1 -p "Press any key to continue..." key
 				else
 					echo
-					printf "\033[1;32m%s\033[0m\n" "Account created successful."
+					printf "\033[1;32m%s\033[0m\n" "Account created successfully."
 					printf "Please check your email \033[1;36m%s\033[0m to verify.\n" "$username"
 					echo
 					read -rsn1 -p "Press any key to continue..." key
@@ -1158,9 +1158,33 @@ getMegaUsedStorage() {
 
 action.megaFind() {
 	local pattern
-	read -rep 'Mega Find: (cancel) ' pattern
+	read -rep 'Mega Find: ' pattern
 	if [[ ! -z "$pattern" ]]; then
-		mega-find '/' -l --pattern="*$pattern*" --show-handles
+		local findResult="$(mega-find "$1" -l --pattern="*$pattern*" --show-handles)"
+		echo
+		if [[ -z "$findResult" ]]; then
+			printf "\033[1;31m%s\033[0m\n" "Pattern not found."
+		else
+			local prevIFS="$IFS"
+			while IFS= read -r line; do
+				local filePath="$(sed -E "s|^(.+) <[a-zA-Z]:[^ ]+.*|\1|" <<< "$line")"
+				local fileHandle="$(sed -E "s|^.+ <([a-zA-Z]:[^> ]+).*|\1|" <<< "$line")"
+				local fileSharedLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
+				grep -Eio "[a-zA-Z]:[^ ]+ \(folder" <<< "$line" &> /dev/null
+				if [[ $? -eq 0 ]]; then
+					filePath="\033[44m$(sed -E "s|$pattern|\\\033[1;31m$pattern\\\033[0m\\\033[44m|" <<< "$filePath")\033[0m"
+				else
+					filePath="$(sed -E "s|$pattern|\\\033[1;31m$pattern\\\033[0m|" <<< "$filePath")"
+				fi
+				printf "$filePath $fileHandle\n"
+
+				if [[ ! -z "$fileSharedLink" ]]; then
+					printf "Shared link: \033[1;36m%s\033[0m\n\n" "$fileSharedLink"
+				fi
+			done <<< "$findResult"
+			IFS="$prevIFS"
+		fi
+
 		echo
 		read -rsn1 -p "Press any key to continue..." key
 	fi
@@ -1399,13 +1423,20 @@ action.megaDir() {
 			tmenu.megaExplorer "megaSlDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-cp "$1" "$TMENU_RESULT"
-				if [[ $? -ne 0 ]]; then
-					echo
-					read -rsn1 -p "Press any key to continue..." key
-				else
-					if [[ "$megauser" != 'Shared Link' ]]; then
-						getMegaUsedStorage
-					fi
+			else
+				local cDst
+				read -rep "Destination: (cancel) " cDst
+				if [[ ! -z "$cDst" ]]; then
+					mega-cp "$1" "$cDst"
+				fi
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			elif [[ "$TMENU_RESULT" != "$ESC_KEY" || ! -z "$cDst" ]]; then
+				if [[ "$megauser" != 'Shared Link' ]]; then
+					getMegaUsedStorage
 				fi
 			fi
 			;;
@@ -1545,7 +1576,11 @@ action.megaDir() {
 			;;
 
 		"Find")
-			action.megaFind
+			if [[ "$1" == '.' ]]; then
+				action.megaFind "$MEGAWDIR"
+			else
+				action.megaFind "$1"
+			fi
 			;;
 
 		"Import Link")
@@ -1704,13 +1739,20 @@ action.megaFile() {
 			tmenu.megaExplorer "megaSlDst"
 			if [[ "$TMENU_RESULT" != "$ESC_KEY" ]]; then
 				mega-cp "$1" "$TMENU_RESULT"
-				if [[ $? -ne 0 ]]; then
-					echo
-					read -rsn1 -p "Press any key to continue..." key
-				else
-					if [[ "$megauser" != 'Shared Link' ]]; then
-						getMegaUsedStorage
-					fi
+			else
+				local cDst
+				read -rep "Destination: (cancel) " cDst
+				if [[ ! -z "$cDst" ]]; then
+					mega-cp "$1" "$cDst"
+				fi
+			fi
+
+			if [[ $? -ne 0 ]]; then
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			elif [[ "$TMENU_RESULT" != "$ESC_KEY" || ! -z "$cDst" ]]; then
+				if [[ "$megauser" != 'Shared Link' ]]; then
+					getMegaUsedStorage
 				fi
 			fi
 			;;
@@ -1975,7 +2017,7 @@ tmenu.megaExplorer() {
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'m' ]]; then
 			action.megaMenu
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'f' ]]; then
-			action.megaFind
+			action.megaFind '/'
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'i' ]]; then
 			if [[ "$MEGAWDIR" == '//in'* ]]; then
 				if [[ "$MEGASRC" == '//bin'* || "$MEGASRC" == '//in'* ]]; then
