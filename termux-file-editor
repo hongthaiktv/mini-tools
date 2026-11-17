@@ -1165,21 +1165,34 @@ action.megaFind() {
 		if [[ -z "$findResult" ]]; then
 			printf "\033[1;31m%s\033[0m\n" "Pattern not found."
 		else
+			local totalResult="$(grep -c "." <<< "$findResult")"
+			printf "Total found: \033[1;32m%s\033[0m\n\n" "$totalResult"
+
 			local prevIFS="$IFS"
 			while IFS= read -r line; do
 				local filePath="$(sed -E "s|^(.+) <[a-zA-Z]:[^ ]+.*|\1|" <<< "$line")"
+				local parentPath="$(grep -Eo "^.*/" <<< "$filePath")"
+				local fileName="$(grep -Eo "[^/]+$" <<< "$filePath")"
 				local fileHandle="$(sed -E "s|^.+ <([a-zA-Z]:[^> ]+).*|\1|" <<< "$line")"
-				local fileSharedLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
 				grep -Eio "[a-zA-Z]:[^ ]+ \(folder" <<< "$line" &> /dev/null
 				if [[ $? -eq 0 ]]; then
-					filePath="\033[44m$(sed -E "s|$pattern|\\\033[1;31m$pattern\\\033[0m\\\033[44m|" <<< "$filePath")\033[0m"
+					filePath="\033[44m$parentPath$(sed -E "s|$pattern|\\\033[1;31m$pattern\\\033[0m\\\033[44m|g" <<< "$fileName")\033[0m"
+					printf "$filePath $fileHandle\n"
 				else
-					filePath="$(sed -E "s|$pattern|\\\033[1;31m$pattern\\\033[0m|" <<< "$filePath")"
+					filePath="$parentPath$(sed -E "s|$pattern|\\\033[1;31m$pattern\\\033[0m|g" <<< "$fileName")"
+					local fileSize="$(sed -E "s|^.+ <[a-zA-Z]:[^ ]+ \(([^),]+).*|\1|" <<< "$line")"
+					printf "$filePath $fileHandle $fileSize\n"
 				fi
-				printf "$filePath $fileHandle\n"
 
+				local fileSharedLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
 				if [[ ! -z "$fileSharedLink" ]]; then
-					printf "Shared link: \033[1;36m%s\033[0m\n\n" "$fileSharedLink"
+					local authToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
+					if [[ -z "$authToken" ]]; then
+						printf "\033[1;36m%s\033[0m\n\n" "$fileSharedLink"
+					else
+						authToken="AuthToken: $(grep -Eio "^.+:" <<< "$authToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$authToken")\033[0m"
+						printf "\033[1;36m%s\033[0m\n$authToken\n\n" "$fileSharedLink"
+					fi
 				fi
 			done <<< "$findResult"
 			IFS="$prevIFS"
@@ -1220,7 +1233,8 @@ action.megaMenu() {
 			;;
 
 		"Export Links (All)")
-			local exportTotal="$(mega-export '/' | grep -c "^[^ ]")"
+			local exportLinks="$(mega-export '/' | grep "^[^ ]")"
+			local exportTotal="$(grep -c "." <<< "$exportLinks")"
 			printf "Total exported links: \033[1;32m%s\033[0m\n\n" "$exportTotal"
 
 			local prevIFS="$IFS"
@@ -1235,7 +1249,7 @@ action.megaMenu() {
 					exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
 				fi
 				printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
-			done < <(mega-export '/' | grep "^[^ ]")
+			done <<< "$exportLinks"
 			IFS="$prevIFS"
 
 			read -rsn1 -p "Press any key to continue..." key
