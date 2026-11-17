@@ -1158,7 +1158,12 @@ getMegaUsedStorage() {
 
 action.megaFind() {
 	local pattern
-	read -rep 'Mega Find: ' pattern
+	local msg="Folder find: "
+	if [[ "$1" == '/' || "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
+		msg="Root find: "
+	fi
+	read -rep "$msg" pattern
+
 	if [[ ! -z "$pattern" ]]; then
 		local findResult="$(mega-find "$1" -l --pattern="*$pattern*" --show-handles)"
 		echo
