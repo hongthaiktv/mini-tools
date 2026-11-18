@@ -1203,6 +1203,65 @@ action.megaFind() {
 	fi
 }
 
+action.megaContact() {
+	until [[ "$TMENU_RESULT" == 'EXIT' || "$TMENU_RESULT" == 'MAINMENU' ]]; do
+		clear
+		local title="\033[41m MEGA CONTACT MANAGER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 25 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+m: Back)\n\n"
+		printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
+
+		local contacts="$(mega-users -hsn)"
+		if [[ -z "$contacts" ]]; then
+			echo "Not yet added any contact."
+		else
+			printf "$(sed -E "s/ ([^ ]+@[^ ]+)\. / \\\033[1;36m\1\\\033[0m\. /g" <<< "$contacts")\n"
+		fi
+		echo
+
+		local menuContacts=( "Add Contact" "Remove Contact" "Request Pending" )
+
+		unset MEGA_FILE_TYPES
+		tmenu "${menuContacts[@]}"
+
+		case "$TMENU_RESULT" in
+			"$ESC_KEY" | "$ESC_KEY"'m')
+				break
+				;;
+
+			"Add Contact")
+				local contactEmail=""
+				local message=""
+				read -rep "Contact email: (cancel) " contactEmail
+				if [[ ! -z "$contactEmail" ]]; then
+					read -rep $'Message: (Request sending by \033[1;32m'"$megauser"$'\033[0m) ' message
+					echo
+
+					if [[ -z "$message" ]]; then
+						message="Request sending by $megauser"
+					fi
+					mega-invite "$contactEmail" --message="$message" 1> /dev/null
+
+					if [[ $? -eq 0 ]]; then
+						printf "Invitation to \033[1;36m%s\033[0m has been send.\nPlease contact the user to confirm.\n" "$contactEmail"
+					fi
+
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+				;;
+
+			"Remove Contact")
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+				;;
+
+			"Request Pending")
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+				;;
+		esac
+	done
+}
+
 action.megaMenu() {
 	clear
 	local title="\033[41m MEGA MENU (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 14 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+m: Back)\n\n"
@@ -1276,14 +1335,7 @@ action.megaMenu() {
 			;;
 
 		"Contacts")
-			local contacts="$(mega-users -hsn)"
-			if [[ -z "$contacts" ]]; then
-				echo "Not yet added any contact."
-			else
-				echo "$contacts"
-			fi
-			echo
-			read -rsn1 -p "Press any key to continue..." key
+			action.megaContact
 			;;
 
 		"Mount")
