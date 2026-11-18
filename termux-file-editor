@@ -1216,7 +1216,7 @@ action.megaMenu() {
 	declare -a menuList
 
 	if [[ "$megauser" != 'Shared Link' ]]; then
-		menuList+=( "Account Info" "Export Links (All)" "Import Link" )
+		menuList+=( "Account Info" "Export Links (All)" )
 	fi
 
 	menuList+=( "Session ID" )
@@ -1258,24 +1258,6 @@ action.megaMenu() {
 			IFS="$prevIFS"
 
 			read -rsn1 -p "Press any key to continue..." key
-			;;
-
-		"Import Link")
-			read -rep 'Shared link: (cancel) ' megaLink
-			if [[ ! -z "$megaLink" ]]; then
-				read -rsep 'Password protected: (none) ' passwordLink
-
-				if [[ -z "$passwordLink" ]]; then
-					mega-import "$megaLink" "$1"
-				else
-					mega-import "$megaLink" --password="$passwordLink" "$1"
-				fi
-
-				if [[ $? -ne 0 ]]; then
-					echo
-					read -rsn1 -p "Press any key to continue..." key
-				fi
-			fi
 			;;
 
 		"Session ID")
@@ -1378,12 +1360,6 @@ action.megaDir() {
 		actions+=( "Find" )
 	fi
 
-	if [[ "$MEGAWDIR" != '/' || "$MEGAWDIR" == '/' && "$1" != '.' ]]; then
-		if [[ "$megauser" != 'Shared Link' ]]; then
-			actions+=( "Import Link" )
-		fi
-	fi
-
 	if [[ "$1" == '.' ]]; then
 		if [[ "$MEGAWDIR" != '/' ]]; then
 			if [[ "$megauser" != 'Shared Link' ]]; then
@@ -1413,6 +1389,10 @@ action.megaDir() {
 		if [[ "$megauser" != 'Shared Link' ]]; then
 			actions+=( "Export" )
 		fi
+	fi
+
+	if [[ "$megauser" != 'Shared Link' ]]; then
+		actions+=( "Import Link" )
 	fi
 
 	actions+=( "Usage" "Detail" )
@@ -1616,6 +1596,7 @@ action.megaDir() {
 			read -rep 'Shared link: (cancel) ' megaLink
 			if [[ ! -z "$megaLink" ]]; then
 				read -rsep 'Password protected: (none) ' passwordLink
+				echo
 
 				if [[ -z "$passwordLink" ]]; then
 					mega-import "$megaLink" "$1"
