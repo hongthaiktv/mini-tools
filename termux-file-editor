@@ -1158,7 +1158,7 @@ getMegaUsedStorage() {
 
 action.megaFind() {
 	local pattern
-	local msg="Folder find: "
+	local msg="Find: "
 	if [[ "$1" == '/' || "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
 		msg="Root find: "
 	fi
@@ -1370,7 +1370,13 @@ action.megaDir() {
 		actions+=( "Rename" )
 	fi
 
-	actions+=( "New folder" "Find" )
+	actions+=( "New folder" )
+
+	if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
+		actions+=( "Find (Root)" )
+	else
+		actions+=( "Find" )
+	fi
 
 	if [[ "$MEGAWDIR" != '/' || "$MEGAWDIR" == '/' && "$1" != '.' ]]; then
 		if [[ "$megauser" != 'Shared Link' ]]; then
@@ -1387,7 +1393,11 @@ action.megaDir() {
 
 		for fileType in "${MEGA_FILE_TYPES[@]}"; do
 			if [[ "$fileType" == 'dep' || "$fileType" == 'ep' ]]; then
-				actions+=( "Export Links" )
+				if [[ "$MEGAWDIR" == '/' ]]; then
+					actions+=( "Export Links (All)" )
+				else
+					actions+=( "Export Links" )
+				fi
 				break
 			fi
 		done
@@ -1594,11 +1604,11 @@ action.megaDir() {
 			fi
 			;;
 
-		"Find")
+		"Find" | "Find (Root)")
 			if [[ "$1" == '.' ]]; then
 				action.megaFind "$MEGAWDIR"
 			else
-				action.megaFind "$1"
+				action.megaFind "$MEGAWDIR/$1"
 			fi
 			;;
 
@@ -1638,9 +1648,15 @@ action.megaDir() {
 			fi
 			;;
 
-		"Export Links")
-			local exportTotal="$(mega-export "$1" | grep -c "^[^ ]")"
-			printf "Exported links: \033[1;32m%s\033[0m\n\n" "$exportTotal"
+		"Export Links" | "Export Links (All)")
+			local exportLinks="$(mega-export "$1" | grep "^[^ ]")"
+			local exportTotal="$(grep -c "." <<< "$exportLinks")"
+			local msg='Exported links: '
+
+			if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
+				msg='Total exported links: '
+			fi
+			printf "%s\033[1;32m%s\033[0m\n\n" "$msg" "$exportTotal"
 
 			local prevIFS="$IFS"
 			while IFS= read -r line; do
@@ -1654,7 +1670,7 @@ action.megaDir() {
 					exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
 				fi
 				printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
-			done < <(mega-export "$1" | grep "^[^ ]")
+			done <<< "$exportLinks"
 			IFS="$prevIFS"
 
 			read -rsn1 -p "Press any key to continue..." key
