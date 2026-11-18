@@ -987,7 +987,7 @@ megaLogin() {
 				fi
 
 				read -rep $'Username: (c)ancel/(\033[1;32m'"$megaLoginName"$'\033[0m) ' megauser
-				if [[ "$megauser" == 'c' || "$megauser" == 'C' ]]; then
+				if [[ "$megauser" == 'c' || "$megauser" == 'C' || ("$megaLoginName" == 'new' && -z "$megauser") ]]; then
 					continue
 				fi
 
@@ -1034,7 +1034,7 @@ megaLogin() {
 				fi
 
 				read -rep "$msg" megaLink
-				if [[ "$megaLink" == 'c' || "$megaLink" == 'C' ]]; then
+				if [[ "$megaLink" == 'c' || "$megaLink" == 'C' || ("$megaShortLink" == 'new' && -z "$megaLink") ]]; then
 					continue
 				fi
 
