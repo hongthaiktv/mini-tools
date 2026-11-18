@@ -1255,8 +1255,33 @@ action.megaContact() {
 				;;
 
 			"Request Pending")
-				echo
-				read -rsn1 -p "Press any key to continue..." key
+				while :; do
+					local contactEmail=""
+					local requestPending="$(mega-showpcr)"
+					local numRequest="$(grep -Ec "[^ ]+@[^ ]+" <<< "$requestPending")"
+					if [[ $numRequest -gt 0 ]]; then
+						printf "Total request: \033[1;32m%s\033[0m\n\n" "$numRequest"
+						printf "$(sed -E "s/([^ ]+@[^ ]+)/\\\033[1;36m\1\\\033[0m/g" <<< "$requestPending")\n"
+						echo
+						read -rep "Enter email to delete request: (cancel) " contactEmail
+						echo
+						if [[ ! -z "$contactEmail" ]]; then
+							mega-invite -d "$contactEmail"
+							if [[ $? -ne 0 ]]; then
+								echo
+								read -rsn1 -p "Press any key to continue..." key
+							fi
+							clear
+						else
+							break
+						fi
+					else
+						echo "No request pending."
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						break
+					fi
+				done
 				;;
 		esac
 	done
