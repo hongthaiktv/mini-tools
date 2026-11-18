@@ -986,10 +986,7 @@ megaLogin() {
 					megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
 				fi
 
-				local msg="Username: (c)ancel/(\033[1;32m%s\033[0m)"
-				printf "$msg" "$megaLoginName"
-
-				read -rep ' ' megauser
+				read -rep $'Username: (c)ancel/(\033[1;32m'"$megaLoginName"$'\033[0m) ' megauser
 				if [[ "$megauser" == 'c' || "$megauser" == 'C' ]]; then
 					continue
 				fi
@@ -1031,14 +1028,12 @@ megaLogin() {
 
 				local msg=""
 				if [[ -z "$megaLinkDirName" ]]; then
-					msg="Shared link: (c)ancel/(\033[1;36m%s\033[0m)"
-					printf "$msg" "$megaShortLink"
+					msg=$'Shared link: (c)ancel/(\033[1;36m'"$megaShortLink"$'\033[0m) '
 				else
-					msg="Shared link: (c)ancel/(\033[1;34m%s\033[0m | \033[1;36m%s\033[0m)"
-					printf "$msg" "$megaLinkDirName" "$megaShortLink"
+					msg=$'Shared link: (c)ancel/(\033[1;34m'"$megaLinkDirName"$'\033[0m | \033[1;36m'"$megaShortLink"$'\033[0m) '
 				fi
 
-				read -rep ' ' megaLink
+				read -rep "$msg" megaLink
 				if [[ "$megaLink" == 'c' || "$megaLink" == 'C' ]]; then
 					continue
 				fi
@@ -1222,7 +1217,7 @@ action.megaMenu() {
 	menuList+=( "Session ID" )
 
 	if [[ "$megauser" != 'Shared Link' ]]; then
-		menuList+=( "Close All Sessions" "Mount" )
+		menuList+=( "Close All Sessions" "Contacts" "Mount" )
 	fi
 
 	menuList+=( "Transfer Logs" "Logout" )
@@ -1278,6 +1273,17 @@ action.megaMenu() {
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
+			;;
+
+		"Contacts")
+			local contacts="$(mega-users -hsn)"
+			if [[ -z "$contacts" ]]; then
+				echo "Not yet added any contact."
+			else
+				echo "$contacts"
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 			;;
 
 		"Mount")
