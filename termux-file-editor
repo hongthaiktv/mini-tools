@@ -1218,17 +1218,18 @@ action.megaContact() {
 		local title="\033[41m MEGA CONTACT MANAGER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 25 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+l: Logout | Esc+m: Back)\n\n"
 		printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 
+		local menuContacts=( "Add Contact" "Request Pending" )
+
 		local contacts="$(mega-users -sn)"
 		if [[ -z "$contacts" ]]; then
 			echo "Not yet added any contact."
 		else
+			menuContacts+=( "Delete Contact" "Verify Contact" "Unverify Contact" "Help Verify Contact" )
 			local numContact="$(grep -Ec " [^ ]+@[^ ]+\. " <<< "$contacts")"
 			printf "Total contact: \033[1;32m%s\033[0m\n\n" "$numContact"
 			printf "$(sed -E "s/ ([^ ]+@[^ ]+)\. / \\\033[1;36m\1\\\033[0m\. /g" <<< "$contacts")\n"
 		fi
 		echo
-
-		local menuContacts=( "Add Contact" "Delete Contact" "Request Pending" )
 
 		unset MEGA_FILE_TYPES
 		tmenu "${menuContacts[@]}"
@@ -1270,27 +1271,8 @@ action.megaContact() {
 				fi
 				;;
 
-			"Delete Contact")
-				if [[ ! -z "$contacts" ]]; then
-					read -rep "Enter contact email to delete: (cancel) " contactEmail
-					echo
-					if [[ ! -z "$contactEmail" ]]; then
-						mega-users -d "$contactEmail" 1> /dev/null
-						if [[ $? -ne 0 ]]; then
-							echo
-							read -rsn1 -p "Press any key to continue..." key
-						fi
-					fi
-				else
-					echo "No contact to delete."
-					echo
-					read -rsn1 -p "Press any key to continue..." key
-				fi
-				;;
-
 			"Request Pending")
 				until [[ "$TMENU_RESULT" == 'EXIT' || "$TMENU_RESULT" == 'MAINMENU' || "$TMENU_RESULT" == 'EXPLORER' ]]; do
-					local contactEmail=""
 					local requestPending="$(mega-showpcr)"
 					if [[ ! -z "$requestPending" ]]; then
 						local incomingRequest="$(mega-showpcr --in)"
@@ -1451,6 +1433,101 @@ action.megaContact() {
 					local title="\033[41m MEGA CONTACT MANAGER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 25 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - ${#storageInfo} ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(Esc+l: Logout | Esc+m: Back)\n\n"
 					printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 				done
+				;;
+
+			"Delete Contact")
+				printf "\033[$(( ${#menuContacts[@]} + 1 ))A\033[0J"
+				local contactEmails=( $(grep -Eo " [^ ]+@[^ ]+\. " <<< "$contacts" | sed -E "s/^ ([^ ]+@[^ ]+)\. /\1/") )
+				tmenu "${contactEmails[@]}"
+
+				local contactEmail=""
+				for (( i=0 ; i<${#contactEmails[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${contactEmails[$i]}" ]]; then
+						contactEmail="${contactEmails[$i]}"
+						break
+					fi
+				done
+
+				if [[ ! -z "$contactEmail" ]]; then
+					local confirmDelete=""
+					read -rn1 -p $'Delete contact \033[1;31m'"$contactEmail"$'\033[0m? (y/N): ' confirmDelete
+					if [[ "$confirmDelete" == 'y' || "$confirmDelete" == 'Y' ]]; then
+						mega-users -d "$contactEmail" 1> /dev/null
+						if [[ $? -ne 0 ]]; then
+							echo
+							read -rsn1 -p "Press any key to continue..." key
+						fi
+					fi
+				fi
+				;;
+
+			"Verify Contact")
+				printf "\033[$(( ${#menuContacts[@]} + 1 ))A\033[0J"
+				local contactEmails=( $(grep -Eo " [^ ]+@[^ ]+\. " <<< "$contacts" | sed -E "s/^ ([^ ]+@[^ ]+)\. /\1/") )
+				tmenu "${contactEmails[@]}"
+
+				local contactEmail=""
+				for (( i=0 ; i<${#contactEmails[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${contactEmails[$i]}" ]]; then
+						contactEmail="${contactEmails[$i]}"
+						break
+					fi
+				done
+
+				if [[ ! -z "$contactEmail" ]]; then
+					local verifyResult="$(mega-users --verify "$contactEmail")"
+					if [[ ! -z "$verifyResult" ]]; then
+						printf "$(sed -E "s/([^ ]+@[^ \"]+)/\\\033[1;36m\1\\\033[0m/" <<< "$verifyResult")\n"
+					fi
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+				;;
+
+			"Unverify Contact")
+				printf "\033[$(( ${#menuContacts[@]} + 1 ))A\033[0J"
+				local contactEmails=( $(grep -Eo " [^ ]+@[^ ]+\. " <<< "$contacts" | sed -E "s/^ ([^ ]+@[^ ]+)\. /\1/") )
+				tmenu "${contactEmails[@]}"
+
+				local contactEmail=""
+				for (( i=0 ; i<${#contactEmails[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${contactEmails[$i]}" ]]; then
+						contactEmail="${contactEmails[$i]}"
+						break
+					fi
+				done
+
+				if [[ ! -z "$contactEmail" ]]; then
+					local unVerifyResult="$(mega-users --unverify "$contactEmail")"
+					if [[ ! -z "$unVerifyResult" ]]; then
+						printf "$(sed -E "s/([^ ]+@[^ \"]+)/\\\033[1;36m\1\\\033[0m/" <<< "$unVerifyResult")\n"
+					fi
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+				;;
+
+			"Help Verify Contact")
+				printf "\033[$(( ${#menuContacts[@]} + 1 ))A\033[0J"
+				local contactEmails=( $(grep -Eo " [^ ]+@[^ ]+\. " <<< "$contacts" | sed -E "s/^ ([^ ]+@[^ ]+)\. /\1/") )
+				tmenu "${contactEmails[@]}"
+
+				local contactEmail=""
+				for (( i=0 ; i<${#contactEmails[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${contactEmails[$i]}" ]]; then
+						contactEmail="${contactEmails[$i]}"
+						break
+					fi
+				done
+
+				if [[ ! -z "$contactEmail" ]]; then
+					local helpVerifyResult="$(mega-users --help-verify "$contactEmail")"
+					if [[ ! -z "$helpVerifyResult" ]]; then
+						printf "$(sed -E "s/([^ ]+@[^ \"]+)/\\\033[1;36m\1\\\033[0m/" <<< "$helpVerifyResult")\n"
+					fi
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
 				;;
 		esac
 	done
