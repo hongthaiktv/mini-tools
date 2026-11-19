@@ -1221,14 +1221,20 @@ action.megaContact() {
 		local menuContacts=( "Add Contact" "Request Pending" )
 
 		local contacts="$(mega-users -sn)"
-		if [[ -z "$contacts" ]]; then
-			echo "Not yet added any contact."
-		else
+		local numContact="$(grep -Ec " [^ ]+@[^ ]+\. " <<< "$contacts")"
+		local contactsText="Not yet added any contact."
+
+		if [[ ! -z "$contacts" ]]; then
 			menuContacts+=( "Delete Contact" "Verify Contact" "Unverify Contact" "Help Verify Contact" )
-			local numContact="$(grep -Ec " [^ ]+@[^ ]+\. " <<< "$contacts")"
-			printf "Total contact: \033[1;32m%s\033[0m\n\n" "$numContact"
-			printf "$(sed -E "s/ ([^ ]+@[^ ]+)\. / \\\033[1;36m\1\\\033[0m\. /g" <<< "$contacts")\n"
+			contactsText="$(sed -E "s/ ([^ ]+@[^ ]+)\. / \\\033[1;36m\1\\\033[0m\. /g" <<< "$contacts")"
 		fi
+
+		local incomingRequest="$(mega-showpcr --in)"
+		local outgoingRequest="$(mega-showpcr --out)"
+		local numIncomingRequest="$(grep -Ec "^ [^ ]+@[^ ]+" <<< "$incomingRequest")"
+		local numOutgoingRequest="$(grep -Ec "^ [^ ]+@[^ ]+" <<< "$outgoingRequest")"
+
+		printf "Contact: \033[1;32m%s\033[0m\tPending: \033[1;31m%s\033[0m\tRequest: \033[1;36m%s\033[0m\n\n$contactsText\n" "$numContact" "$numIncomingRequest" "$numOutgoingRequest"
 		echo
 
 		unset MEGA_FILE_TYPES
@@ -1237,6 +1243,14 @@ action.megaContact() {
 		case "$TMENU_RESULT" in
 			"$ESC_KEY" | "$ESC_KEY"'m')
 				break
+				;;
+
+			"$ESC_KEY"'q')
+				TMENU_RESULT='MAINMENU'
+				;;
+
+			"$ESC_KEY"'e')
+				TMENU_RESULT='EXIT'
 				;;
 
 			"$ESC_KEY"'l')
@@ -1278,7 +1292,9 @@ action.megaContact() {
 						local incomingRequest="$(mega-showpcr --in)"
 						local outgoingRequest="$(mega-showpcr --out)"
 						local numRequest="$(grep -Ec "^ [^ ]+@[^ ]+" <<< "$requestPending")"
-						printf "Total request: \033[1;32m%s\033[0m\n\n" "$numRequest"
+						local numIncomingRequest="$(grep -Ec "^ [^ ]+@[^ ]+" <<< "$incomingRequest")"
+						local numOutgoingRequest="$(grep -Ec "^ [^ ]+@[^ ]+" <<< "$outgoingRequest")"
+						printf "Total: \033[1;32m%s\033[0m      Incoming: \033[1;31m%s\033[0m      Outgoing: \033[1;36m%s\033[0m\n\n" "$numRequest" "$numIncomingRequest" "$numOutgoingRequest"
 						local formatedRequest="$(sed -E "s/^ ([^ ]+@[^ ]+)/\\\033[1;36m\1\\\033[0m/g" <<< "$requestPending")"
 						formatedRequest="$(sed -E "s/(Outgoing PCRs:)/\\\033[42m \1 \\\033[0m/" <<< "$formatedRequest")"
 						if [[ -z "$outgoingRequest" ]]; then
@@ -1556,6 +1572,14 @@ action.megaMenu() {
 	tmenu "${menuList[@]}"
 
 	case "$TMENU_RESULT" in
+		"$ESC_KEY"'q')
+			TMENU_RESULT='MAINMENU'
+			;;
+
+		"$ESC_KEY"'e')
+			TMENU_RESULT='EXIT'
+			;;
+
 		"Account Info")
 			mega-whoami -l
 			echo
@@ -2359,10 +2383,16 @@ tmenu.megaExplorer() {
 
 		if [[ "$TMENU_RESULT" == "$ESC_KEY" ]]; then
 			break
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'q' ]]; then
+			TMENU_RESULT='MAINMENU'
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'e' ]]; then
+			TMENU_RESULT='EXIT'
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'m' ]]; then
 			action.megaMenu
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'f' ]]; then
 			action.megaFind '/'
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'u' ]]; then
+			action.megaContact
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'i' ]]; then
 			if [[ "$MEGAWDIR" == '//in'* ]]; then
 				if [[ "$MEGASRC" == '//bin'* || "$MEGASRC" == '//in'* ]]; then
