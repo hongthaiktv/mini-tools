@@ -2387,6 +2387,9 @@ tmenu.megaExplorer() {
 			TMENU_RESULT='MAINMENU'
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'e' ]]; then
 			TMENU_RESULT='EXIT'
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'a' ]]; then
+			mega-cd '/'
+			MEGAWDIR='/'
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'m' ]]; then
 			action.megaMenu
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'f' ]]; then
