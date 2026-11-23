@@ -1618,7 +1618,7 @@ action.megaShare() {
 		done
 
 		if [[ ! -z "$inShareDir" ]]; then
-			if [[ "$MEGAWDIR" != '//bin'* && "$MEGAWDIR" != '//in'* && "$MEGAWDIR" == '/'* ]]; then
+			if [[ "$MEGAMODE" == 'explorer' && "$MEGAWDIR" != '//bin'* && "$MEGAWDIR" != '//in'* && "$MEGAWDIR" == '/'* ]]; then
 				MEGASRC="$MEGAWDIR"
 			fi
 			mega-cd "$inShareDir"
@@ -2357,6 +2357,7 @@ tmenu.megaExplorer() {
 	fi
 
 	MEGAWDIR="$(mega-pwd)"
+	MEGAMODE='explorer'
 	if [[ "$megauser" == 'Shared Link' ]]; then
 		MEGAWDIR="$(sed -E "s|^\/[^/]*\/?|\/|" <<< "$MEGAWDIR")"
 	fi
@@ -2374,6 +2375,7 @@ tmenu.megaExplorer() {
 	local txtEscT=""
 
 	if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
+		MEGAMODE="$1"
 		if [[ "$MEGAWDIR" == '//bin'* || "$MEGAWDIR" == '//in'* ]]; then
 			mega-cd "/"
 			MEGAWDIR="/"
@@ -2594,6 +2596,7 @@ tmenu.megaExplorer() {
 	if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
 		mega-cd "$MEGASRC"
 		MEGAWDIR="$MEGASRC"
+		MEGAMODE='explorer'
 	fi
 	unset MEGA_FILE_TYPES
 }
