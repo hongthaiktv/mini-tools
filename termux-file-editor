@@ -1603,7 +1603,7 @@ action.megaShare() {
 
 		prevIFS="$IFS"
 		IFS=$'\n'
-		local inShareDirs=( $(sed -E "s|^.+//from/([^ /]+@[^ :]+:.+) \(.*|\1|" <<< "$megaInShare") )
+		inShareDirs=( $(sed -E "s|^.+//from/([^ /]+@[^ :]+:.+) \(.*|\1|" <<< "$megaInShare") )
 		IFS="$prevIFS"
 
 		unset MEGA_FILE_TYPES
@@ -2469,6 +2469,18 @@ tmenu.megaExplorer() {
 				prevItem=".."
 			fi
 		fi
+
+		if [[ $megaNumInShare -gt 0 && "$MEGAWDIR" == '/' ]]; then
+			prevIFS="$IFS"
+			IFS=$'\n'
+			inShareDirs=( $(mega-mount | grep 'INSHARE' | sed -E "s|^.+//from/([^ /]+@[^ :]+:.+) \(.*|\1|") )
+			IFS="$prevIFS"
+			file_list+=( "" $'######## \033[41m IN-SHARE FOLDER \033[0m ########' "" "${inShareDirs[@]}" )
+			MEGA_FILE_TYPES+=( "separator" "subTitle" "separator" )
+			for (( i=0 ; i<${#inShareDirs[@]} ; i++ )); do
+				MEGA_FILE_TYPES+=( "share" )
+			done
+		fi
 		
 		tmenu "$prevItem" "${file_list[@]}"
 		
@@ -2565,8 +2577,11 @@ tmenu.megaExplorer() {
 				break
 			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd' || "${MEGA_FILE_TYPES[$index]}" == 'dep' ]]; then
 				action.megaDir "$MENU_SELECTED"
-			else
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
 				action.megaFile "$MENU_SELECTED"
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'share' ]]; then
+				mega-cd "$MENU_SELECTED"
+				MEGAWDIR="$(mega-pwd)"
 			fi
 		elif [[ "$TMENU_RESULT" == "." ]]; then
 			action.megaDir "$TMENU_RESULT"
@@ -2590,6 +2605,9 @@ tmenu.megaExplorer() {
 			fi
 		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && ( "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ) ]]; then
 			action.megaFile "$TMENU_RESULT"
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'share' ]]; then
+			mega-cd "$TMENU_RESULT"
+			MEGAWDIR="$(mega-pwd)"
 		fi
 	done
 
