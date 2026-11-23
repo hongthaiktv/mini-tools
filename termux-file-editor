@@ -1654,7 +1654,7 @@ action.megaMenu() {
 		menuList+=( "Close All Sessions" "Contacts (Esc+u)" "Shares (Esc+d)" )
 	fi
 
-	menuList+=( "Transfer Logs" "Logout (Esc+l)" )
+	menuList+=( "Reload (Esc+r)" "Transfer Logs (Esc+t)" "Logout (Esc+l)" )
 
 	unset MEGA_FILE_TYPES
 	tmenu "${menuList[@]}"
@@ -1725,11 +1725,15 @@ action.megaMenu() {
 			action.megaShare
 			;;
 
-		"Transfer Logs")
+		"Reload (Esc+r)" | "$ESC_KEY"'r')
+			mega-reload
+			;;
+
+		"Transfer Logs (Esc+t)" | "$ESC_KEY"'t')
 			local transferLogs="$(mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS)"
 			if [[ ! -z "$transferLogs" ]]; then
 				echo "$transferLogs"
-			else
+			elif [[ $? -eq 0 ]]; then
 				echo "Nothing logged."
 			fi
 			echo
@@ -2063,11 +2067,17 @@ action.megaDir() {
 			echo
 
 			if [[ "$key" == "y" || "$key" == "Y" ]]; then
-				mega-export -af --writable "$1"
+				local exportResult="$(mega-export -af --writable "$1")"
+				if [[ ! -z "$exportResult" ]]; then
+					printf "$(sed -E "s|(https://.+$)|\\\033[1;36m\1\\\033[0m|" <<< "$exportResult" | sed -E "s|(AuthToken = .+:)(.+$)|\1\\\033[1;31m\2\\\033[0m|")\n"
+				fi
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			elif [[ "$key" == "n" || "$key" == "N" ]]; then
-				mega-export -af "$1"
+				local exportResult="$(mega-export -af "$1")"
+				if [[ ! -z "$exportResult" ]]; then
+					printf "$(sed -E "s|(https://.+$)|\\\033[1;36m\1\\\033[0m|" <<< "$exportResult")\n"
+				fi
 				echo
 				read -rsn1 -p "Press any key to continue..." key
 			fi
@@ -2285,7 +2295,10 @@ action.megaFile() {
 			;;
 
 		"Export")
-			mega-export -af "$1"
+			local exportResult="$(mega-export -af "$1")"
+			if [[ ! -z "$exportResult" ]]; then
+				printf "$(sed -E "s|(https://.+$)|\\\033[1;36m\1\\\033[0m|" <<< "$exportResult")\n"
+			fi
 			echo
 			read -rsn1 -p "Press any key to continue..." key
 			;;
@@ -2372,7 +2385,7 @@ tmenu.megaExplorer() {
 	local storageInfo=""
 	local storageInfoLength=""
 	local txtEscI=""
-	local txtEscT=""
+	local txtEscB=""
 
 	if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
 		MEGAMODE="$1"
@@ -2422,28 +2435,28 @@ tmenu.megaExplorer() {
 			storageInfo="$megaUsedTrashBin"
 			storageInfoLength=${#megaUsedTrashBin}
 			txtEscI="Inbox"
-			txtEscT="Files"
+			txtEscB="Files"
 		elif [[ "$MEGAWDIR" == '//in'* ]]; then
 			storageInfo="$megaUsedInbox"
 			storageInfoLength=${#megaUsedInbox}
 			txtEscI="Files"
-			txtEscT="Trash"
+			txtEscB="Trash"
 		else
 			storageInfo="$megaUsedStorage"
 			storageInfoLength=$megaUsedStorageLength
 			txtEscI="Inbox"
-			txtEscT="Trash"
+			txtEscB="Trash"
 		fi
 
 		if [[ "$megauser" != 'Shared Link' ]]; then
 			if [[ -z "$1" ]]; then
-				title="\033[41m MEGA FILE EXPLORER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 23 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
+				title="\033[41m MEGA FILE EXPLORER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 23 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+b: %s | Esc+m: Menu)\n\n"
 			elif [[ "$1" == "megaSlDst" ]]; then
-				title="\033[42m MEGA SELECT DESTINATION (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA SELECT DESTINATION (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+b: %s | Esc+m: Menu)\n\n"
 			elif [[ "$1" == "megaSlFile" ]]; then
-				title="\033[42m MEGA SELECT FILE/FOLDER (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA SELECT FILE/FOLDER (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+b: %s | Esc+m: Menu)\n\n"
 			fi
-			printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR" "$txtEscI" "$txtEscT"
+			printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR" "$txtEscI" "$txtEscB"
 		else
 			if [[ -z "$1" ]]; then
 				title="\033[41m MEGA FILE EXPLORER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 23 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
@@ -2534,7 +2547,7 @@ tmenu.megaExplorer() {
 				mega-cd "//in"
 				MEGAWDIR="//in"
 			fi
-		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'t' && "$megauser" != 'Shared Link' ]]; then
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'b' && "$megauser" != 'Shared Link' ]]; then
 			if [[ "$MEGAWDIR" == '//bin'* ]]; then
 				if [[ "$MEGASRC" == '//bin'* || "$MEGASRC" == '//in'* ]]; then
 					mega-cd "/"
@@ -2558,6 +2571,17 @@ tmenu.megaExplorer() {
 			else
 				TMENU_RESULT='MAINMENU'
 			fi
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'r' ]]; then
+			mega-reload
+		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'t' ]]; then
+			local transferLogs="$(mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS)"
+			if [[ ! -z "$transferLogs" ]]; then
+				echo "$transferLogs"
+			elif [[ $? -eq 0 ]]; then
+				echo "Nothing logged."
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
 		elif [[ "$TMENU_RESULT" == 0 ]]; then
 			if [[ "$1" == "megaSlDst" ]]; then
 				MEGADST="$(mega-pwd)"
