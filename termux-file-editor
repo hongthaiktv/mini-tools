@@ -2580,6 +2580,9 @@ tmenu.megaExplorer() {
 			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
 				action.megaFile "$MENU_SELECTED"
 			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'share' ]]; then
+				if [[ "$MEGAMODE" == 'explorer' ]]; then
+					MEGASRC='/'
+				fi
 				mega-cd "$MENU_SELECTED"
 				MEGAWDIR="$(mega-pwd)"
 			fi
@@ -2606,6 +2609,9 @@ tmenu.megaExplorer() {
 		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && ( "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ) ]]; then
 			action.megaFile "$TMENU_RESULT"
 		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'share' ]]; then
+			if [[ "$MEGAMODE" == 'explorer' ]]; then
+				MEGASRC='/'
+			fi
 			mega-cd "$TMENU_RESULT"
 			MEGAWDIR="$(mega-pwd)"
 		fi
