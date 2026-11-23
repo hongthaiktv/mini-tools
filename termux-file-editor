@@ -1579,17 +1579,17 @@ action.megaShare() {
 
 	local title=""
 	if [[ "$megauser" != 'Shared Link' ]]; then
-		if [[ -z "$1" ]]; then
+		if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
+			title="\033[42m MEGA IN-SHARE FOLDERS (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 26 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
+		else
 			title="\033[41m MEGA IN-SHARE FOLDERS (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 26 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
-		elif [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
-			title="\033[42m MEGA IN-SHARE FOLDERS (\033[1;32m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 26 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
 		fi
 		printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR" "$txtEscI" "$txtEscT"
 	else
-		if [[ -z "$1" ]]; then
+		if [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
+			title="\033[42m MEGA IN-SHARE FOLDERS (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 26 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
+		else
 			title="\033[41m MEGA IN-SHARE FOLDERS (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 26 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
-		elif [[ "$1" == "megaSlDst" || "$1" == "megaSlFile" ]]; then
-			title="\033[42m MEGA IN-SHARE FOLDERS (\033[1;32m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 26 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
 		fi
 		printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 	fi
@@ -2448,18 +2448,18 @@ tmenu.megaExplorer() {
 			if [[ -z "$1" ]]; then
 				title="\033[41m MEGA FILE EXPLORER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 23 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
 			elif [[ "$1" == "megaSlDst" ]]; then
-				title="\033[42m MEGA SELECT DESTINATION (\033[1;32m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA SELECT DESTINATION (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
 			elif [[ "$1" == "megaSlFile" ]]; then
-				title="\033[42m MEGA SELECT FILE/FOLDER (\033[1;32m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA SELECT FILE/FOLDER (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+i: %s | Esc+t: %s | Esc+m: Menu)\n\n"
 			fi
 			printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR" "$txtEscI" "$txtEscT"
 		else
 			if [[ -z "$1" ]]; then
 				title="\033[41m MEGA FILE EXPLORER (\033[1;32m%s\033[0m\033[41m) ${lineSpacer:0:$(( ${#lineSpacer} - 23 - ${#megauser} ))}\033[0m\n\033[41m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
 			elif [[ "$1" == "megaSlDst" ]]; then
-				title="\033[42m MEGA SELECT DESTINATION (\033[1;32m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA SELECT DESTINATION (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
 			elif [[ "$1" == "megaSlFile" ]]; then
-				title="\033[42m MEGA SELECT FILE/FOLDER (\033[1;32m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
+				title="\033[42m MEGA SELECT FILE/FOLDER (\033[1;33m%s\033[0m\033[42m) ${lineSpacer:0:$(( ${#lineSpacer} - 28 - ${#megauser} ))}\033[0m\n\033[42m%s\033[0m\n\033[47m\033[1;30m %s ${lineSpacer:0:$(( ${#lineSpacer} - 2 - $storageInfoLength ))}\033[0m\n\n[D:\033[1;34m%s\033[0m | F:\033[1;33m%s\033[0m] \033[1;36m%s\033[0m\n(0: Action | Esc+l: Logout | Esc+m: Menu)\n\n"
 			fi
 			printf "$title" "$megauser" "$lineSeparator" "$storageInfo" "$numDir" "$numFile" "$MEGAWDIR"
 		fi
