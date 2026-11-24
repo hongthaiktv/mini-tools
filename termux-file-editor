@@ -1174,7 +1174,7 @@ action.megaFind() {
 	local pattern
 	local msg="Find: "
 	if [[ "$1" == '/' || "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
-		msg="Root find: "
+		msg="Find (All): "
 	fi
 	read -rep "$msg" pattern
 
@@ -1775,6 +1775,12 @@ action.megaDir() {
 	local title="\033[41m Mega Directory Action \033[0m\n\033[41m --------------------- \033[0m\n\n"
 	printf "$title"
 
+	if [[ "$1" == '.' && "$MEGAWDIR" != '/' ]]; then
+		local parentDir="$(sed -E "s|^(.*/).*|\1|" <<< "$MEGAWDIR")"
+		local currentDirName="$(basename "$MEGAWDIR")"
+		local currentDirFileType="$(mega-ls -lh --show-handles "$parentDir" | grep -i "^d" | grep "$currentDirName$" | grep -Eo "^.{4}")"
+	fi
+
 	local actions=( "Upload" )
 
 	if [[ ! -z "$DST" ]]; then
@@ -1807,44 +1813,67 @@ action.megaDir() {
 	actions+=( "New folder" )
 
 	if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
-		actions+=( "Find (Root)" )
+		actions+=( "Find (All)" )
 	else
 		actions+=( "Find" )
 	fi
 
-	if [[ "$1" == '.' ]]; then
-		if [[ "$MEGAWDIR" != '/' ]]; then
-			if [[ "$megauser" != 'Shared Link' ]]; then
-				actions+=( "Export" )
-			fi
-		fi
+	if [[ "$megauser" != 'Shared Link' ]]; then
+		actions+=( "Import Link" )
+	fi
 
-		for fileType in "${MEGA_FILE_TYPES[@]}"; do
-			if [[ "$fileType" == ?'ep'? ]]; then
-				if [[ "$MEGAWDIR" == '/' ]]; then
-					actions+=( "Export Links (All)" )
-				else
-					actions+=( "Export Links" )
+	if [[ "$megauser" != 'Shared Link' ]]; then
+		if [[ "$1" == '.' ]]; then
+			if [[ "$MEGAWDIR" != '/' ]]; then
+				if [[ "$currentDirFileType" != 'dep'? ]]; then
+					actions+=( "Export" )
 				fi
-				break
-			fi
-		done
 
-		if [[ "$MEGAWDIR" != '/' ]]; then
-			if [[ "$megauser" != 'Shared Link' ]]; then
-				actions+=( "Disable Export" )
+				for fileType in "${MEGA_FILE_TYPES[@]}"; do
+					if [[ "$fileType" == ?'ep'? ]]; then
+						actions+=( "Export Links" )
+						break
+					fi
+				done
+
+				if [[ "$currentDirFileType" == 'dep'? ]]; then
+					actions+=( "Disable Export" )
+				fi
+			else
+				actions+=( "Export Links (All)" )
 			fi
-		fi
-	elif [[ "${MEGA_FILE_TYPES[$index]}" == ?'ep'? ]]; then
-		actions+=( "Export Links" "Disable Export" )
-	else
-		if [[ "$megauser" != 'Shared Link' ]]; then
+		elif [[ "${MEGA_FILE_TYPES[$index]}" == 'dep'? ]]; then
+			actions+=( "Export Links" "Disable Export" )
+		else
 			actions+=( "Export" )
 		fi
 	fi
 
 	if [[ "$megauser" != 'Shared Link' ]]; then
-		actions+=( "Import Link" )
+		if [[ "$1" == '.' ]]; then
+			if [[ "$MEGAWDIR" != '/' ]]; then
+				if [[ "$currentDirFileType" != 'd'??'s' ]]; then
+					actions+=( "Share" )
+				fi
+
+				for fileType in "${MEGA_FILE_TYPES[@]}"; do
+					if [[ "$fileType" == ???'s' ]]; then
+						actions+=( "Shared" )
+						break
+					fi
+				done
+
+				if [[ "$currentDirFileType" == 'd'??'s' ]]; then
+					actions+=( "Disable Share" )
+				fi
+			else
+				actions+=( "Shared (All)" )
+			fi
+		elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd'??'s' ]]; then
+			actions+=( "Shared" "Disable Share" )
+		else
+			actions+=( "Share" )
+		fi
 	fi
 
 	actions+=( "Usage" "Detail" )
@@ -2036,7 +2065,7 @@ action.megaDir() {
 			fi
 			;;
 
-		"Find" | "Find (Root)")
+		"Find" | "Find (All)")
 			if [[ "$1" == '.' ]]; then
 				action.megaFind "$MEGAWDIR"
 			else
@@ -2479,7 +2508,7 @@ tmenu.megaExplorer() {
 			fi
 		fi
 
-		if [[ $megaNumInShare -gt 0 && "$MEGAWDIR" == '/' ]]; then
+		if [[ $megaNumInShare -gt 0 && "$MEGAWDIR" == '/' && "$megauser" != 'Shared Link' ]]; then
 			prevIFS="$IFS"
 			IFS=$'\n'
 			inShareDirs=( $(mega-mount | grep 'INSHARE' | sed -E "s|^.+//from/([^ /]+@[^ :]+:.+) \(.*|\1|") )
