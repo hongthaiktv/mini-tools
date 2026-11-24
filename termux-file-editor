@@ -1606,7 +1606,11 @@ action.megaShare() {
 		inShareDirs=( $(sed -E "s|^.+//from/([^ /]+@[^ :]+:.+) \(.*|\1|" <<< "$megaInShare") )
 		IFS="$prevIFS"
 
-		unset MEGA_FILE_TYPES
+		MEGA_FILE_TYPES=()
+		for (( i=0 ; i<${#inShareDirs[@]} ; i++ )); do
+			MEGA_FILE_TYPES+=( 'inShare' )
+		done
+
 		tmenu "${inShareDirs[@]}"
 
 		local inShareDir=""
@@ -1816,7 +1820,7 @@ action.megaDir() {
 		fi
 
 		for fileType in "${MEGA_FILE_TYPES[@]}"; do
-			if [[ "$fileType" == 'dep' || "$fileType" == 'ep' ]]; then
+			if [[ "$fileType" == ?'ep'? ]]; then
 				if [[ "$MEGAWDIR" == '/' ]]; then
 					actions+=( "Export Links (All)" )
 				else
@@ -1831,7 +1835,7 @@ action.megaDir() {
 				actions+=( "Disable Export" )
 			fi
 		fi
-	elif [[ "${MEGA_FILE_TYPES[$index]}" == 'dep' ]]; then
+	elif [[ "${MEGA_FILE_TYPES[$index]}" == ?'ep'? ]]; then
 		actions+=( "Export Links" "Disable Export" )
 	else
 		if [[ "$megauser" != 'Shared Link' ]]; then
@@ -2174,7 +2178,7 @@ action.megaFile() {
 
 	actions+=( "Rename" )
 
-	if [[ "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
+	if [[ "${MEGA_FILE_TYPES[$index]}" == ?'ep'? ]]; then
 		actions+=( "Export Link" "Disable Export" )
 	elif [[ "$megauser" != 'Shared Link' ]]; then
 		actions+=( "Export" )
@@ -2400,7 +2404,7 @@ tmenu.megaExplorer() {
 	until [[ "$TMENU_RESULT" == 'EXIT' || "$TMENU_RESULT" == 'MAINMENU' ]]; do
 		clear
 		local file_list=( "." ".." )
-		MEGA_FILE_TYPES=( "d" "d" )
+		MEGA_FILE_TYPES=( "d---" "d---" )
 		local checkPrev=0
 		if [[ "$prevItem" == '.' || "$prevItem" == '..' ]]; then
 			prevItem=""
@@ -2411,21 +2415,13 @@ tmenu.megaExplorer() {
 		local numFile=0
 		local prevIFS="$IFS"
 		while IFS= read -r line; do
-			if [[ "$line" == 'dep'* ]]; then
-				MEGA_FILE_TYPES+=( "dep" )
-			else
-				MEGA_FILE_TYPES+=( "d" )
-			fi
+			MEGA_FILE_TYPES+=( "$(grep -iEo "^.{4}" <<< "$line")" )
 			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:[^ ]+ (.+)$"/"\1"/ <<< "$line")" )
 			(( ++numDir ))
 		done < <(grep -i "^d" <<< "$allFiles")
 
 		while IFS= read -r line; do
-			if [[ "$line" == ?'ep'* ]]; then
-				MEGA_FILE_TYPES+=( "ep" )
-			else
-				MEGA_FILE_TYPES+=( "f" )
-			fi
+			MEGA_FILE_TYPES+=( "$(grep -iEo "^.{4}" <<< "$line")" )
 			file_list+=( "$(sed -E s/"^.+[a-zA-Z]:[^ ]+ (.+)$"/"\1"/ <<< "$line")" )
 			(( ++numFile ))
 		done < <(grep -Eiv "^d|FLAGS" <<< "$allFiles")
@@ -2491,7 +2487,7 @@ tmenu.megaExplorer() {
 			file_list+=( "" $'######## \033[41m IN-SHARE FOLDER \033[0m ########' "" "${inShareDirs[@]}" )
 			MEGA_FILE_TYPES+=( "separator" "subTitle" "separator" )
 			for (( i=0 ; i<${#inShareDirs[@]} ; i++ )); do
-				MEGA_FILE_TYPES+=( "share" )
+				MEGA_FILE_TYPES+=( "inShare" )
 			done
 		fi
 		
@@ -2599,11 +2595,11 @@ tmenu.megaExplorer() {
 					TMENU_RESULT="$MEGAWDIR/$MENU_SELECTED"
 				fi
 				break
-			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd' || "${MEGA_FILE_TYPES[$index]}" == 'dep' ]]; then
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd'* ]]; then
 				action.megaDir "$MENU_SELECTED"
-			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ]]; then
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == '-'* ]]; then
 				action.megaFile "$MENU_SELECTED"
-			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'share' ]]; then
+			elif [[ "${MEGA_FILE_TYPES[$index]}" == 'inShare' ]]; then
 				if [[ "$MEGAMODE" == 'explorer' ]]; then
 					MEGASRC='/'
 				fi
@@ -2612,7 +2608,7 @@ tmenu.megaExplorer() {
 			fi
 		elif [[ "$TMENU_RESULT" == "." ]]; then
 			action.megaDir "$TMENU_RESULT"
-		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && ( "${MEGA_FILE_TYPES[$index]}" == 'd' || "${MEGA_FILE_TYPES[$index]}" == 'dep' ) ]]; then
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'd'* ]]; then
 			if [[ "$TMENU_RESULT" == '..' && ("$MEGAWDIR" == '//bin' || "$MEGAWDIR" == '//in' || "$MEGAWDIR" != *'/'*) ]]; then
 				if [[ "$MEGASRC" == '//bin'* || "$MEGASRC" == '//in'* || "$MEGASRC" != '/'* ]]; then
 					mega-cd "/"
@@ -2630,9 +2626,9 @@ tmenu.megaExplorer() {
 					MEGAWDIR="$(sed -E "s|^\/[^/]*\/?|\/|" <<< "$MEGAWDIR")"
 				fi
 			fi
-		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && ( "${MEGA_FILE_TYPES[$index]}" == 'f' || "${MEGA_FILE_TYPES[$index]}" == 'ep' ) ]]; then
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == '-'* ]]; then
 			action.megaFile "$TMENU_RESULT"
-		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'share' ]]; then
+		elif [[ "$TMENU_RESULT" == "${file_list[$index]}" && "${MEGA_FILE_TYPES[$index]}" == 'inShare' ]]; then
 			if [[ "$MEGAMODE" == 'explorer' ]]; then
 				MEGASRC='/'
 			fi
