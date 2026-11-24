@@ -1827,52 +1827,46 @@ action.megaDir() {
 			if [[ "$MEGAWDIR" != '/' ]]; then
 				if [[ "$currentDirFileType" != 'dep'? ]]; then
 					actions+=( "Export" )
-				fi
-
-				for fileType in "${MEGA_FILE_TYPES[@]}"; do
-					if [[ "$fileType" == ?'ep'? ]]; then
-						actions+=( "Export Links" )
-						break
-					fi
-				done
-
-				if [[ "$currentDirFileType" == 'dep'? ]]; then
-					actions+=( "Disable Export" )
+					for fileType in "${MEGA_FILE_TYPES[@]}"; do
+						if [[ "$fileType" == ?'ep'? ]]; then
+							actions+=( "Exported Links" )
+							break
+						fi
+					done
+				else
+					actions+=( "Exported Links" "Disable Export" )
 				fi
 			else
-				actions+=( "Export Links (All)" )
+				actions+=( "Exported Links (All)" )
 			fi
 		elif [[ "${MEGA_FILE_TYPES[$index]}" == 'dep'? ]]; then
-			actions+=( "Export Links" "Disable Export" )
+			actions+=( "Exported Links" "Disable Export" )
 		else
 			actions+=( "Export" )
 		fi
 	fi
 
 	if [[ "$megauser" != 'Shared Link' ]]; then
+		if [[ ! ("$1" == '.' && "$MEGAWDIR" == '/') ]]; then
+			actions+=( "Share" )
+		fi
 		if [[ "$1" == '.' ]]; then
 			if [[ "$MEGAWDIR" != '/' ]]; then
 				if [[ "$currentDirFileType" != 'd'??'s' ]]; then
-					actions+=( "Share" )
-				fi
-
-				for fileType in "${MEGA_FILE_TYPES[@]}"; do
-					if [[ "$fileType" == ???'s' ]]; then
-						actions+=( "Shared" )
-						break
-					fi
-				done
-
-				if [[ "$currentDirFileType" == 'd'??'s' ]]; then
-					actions+=( "Disable Share" )
+					for fileType in "${MEGA_FILE_TYPES[@]}"; do
+						if [[ "$fileType" == ???'s' ]]; then
+							actions+=( "Shared Folders" )
+							break
+						fi
+					done
+				else
+					actions+=( "Shared Folders" "Disable Share" )
 				fi
 			else
-				actions+=( "Shared (All)" )
+				actions+=( "Shared Folders (All)" )
 			fi
 		elif [[ "${MEGA_FILE_TYPES[$index]}" == 'd'??'s' ]]; then
-			actions+=( "Shared" "Disable Share" )
-		else
-			actions+=( "Share" )
+			actions+=( "Shared Folders" "Disable Share" )
 		fi
 	fi
 
@@ -2116,31 +2110,40 @@ action.megaDir() {
 			fi
 			;;
 
-		"Export Links" | "Export Links (All)")
-			local exportLinks="$(mega-export "$1" | grep "^[^ ]")"
-			local exportTotal="$(grep -c "." <<< "$exportLinks")"
-			local msg='Exported links: '
+		"Exported Links" | "Exported Links (All)")
+			local exportLinks="$(mega-export "$1")"
+# 			bug check null result $? = 0 (53)
+# 			run exportLinks="$(mega-export "$1")" at other terminal empty result $? = 53
+# 			output code 53 return text to stdout instead stderr
 
-			if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
-				msg='Total exported links: '
+			if [[ $? -eq 0 && "$exportLinks" != "Couldn't find anything exported"* ]]; then
+				exportLinks="$(grep "^[^ ]" <<< "$exportLinks")"
+				local exportTotal="$(grep -c "." <<< "$exportLinks")"
+				local msg='Exported links: '
+
+				if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
+					msg='Total exported links: '
+				fi
+				printf "%s\033[1;32m%s\033[0m\n\n" "$msg" "$exportTotal"
+
+				local prevIFS="$IFS"
+				while IFS= read -r line; do
+					local exportPath="$(sed -E s/"^(.+) \([^s].*"/"\1"/ <<< "$line")"
+					local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
+					local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
+					if [[ "$line" == *" (folder"* ]]; then
+						exportPath="\033[1;34m$exportPath\033[0m"
+					fi
+					if [[ ! -z "$exportAuthToken" ]]; then
+						exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
+					fi
+					printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
+				done <<< "$exportLinks"
+				IFS="$prevIFS"
+			elif [[ ! -z "$exportLinks" ]]; then
+				echo "$(sed -E "s/[^.]+$//" <<< "$exportLinks")"
+				echo
 			fi
-			printf "%s\033[1;32m%s\033[0m\n\n" "$msg" "$exportTotal"
-
-			local prevIFS="$IFS"
-			while IFS= read -r line; do
-				local exportPath="$(sed -E s/"^(.+) \([^s].*"/"\1"/ <<< "$line")"
-				local exportLink="$(grep -Eio 'https://[^) ]+' <<< "$line")"
-				local exportAuthToken="$(grep -Eio 'AuthToken=[^)]+' <<< "$line" | sed -E s/'^AuthToken='//)"
-				if [[ "$line" == *" (folder"* ]]; then
-					exportPath="\033[1;34m$exportPath\033[0m"
-				fi
-				if [[ ! -z "$exportAuthToken" ]]; then
-					exportAuthToken="\nAuthToken: $(grep -Eio "^.+:" <<< "$exportAuthToken")\033[1;31m$(sed -E s/'^.+:'// <<< "$exportAuthToken")\033[0m"
-				fi
-				printf "Path: $exportPath\n\033[1;36m%s\033[0m$exportAuthToken\n\n" "$exportLink"
-			done <<< "$exportLinks"
-			IFS="$prevIFS"
-
 			read -rsn1 -p "Press any key to continue..." key
 			;;
 
@@ -2148,6 +2151,95 @@ action.megaDir() {
 			mega-export -d "$1"
 			echo
 			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Share")
+			local title="\033[41m Share With Contact \033[0m\n\033[41m ------------------ \033[0m\n\n"
+			printf "$title"
+
+			local contacts="$(mega-users -sn)"
+			if [[ ! -z "$contacts" ]]; then
+				local contactEmails=( $(grep -Eo " [^ ]+@[^ ]+\. " <<< "$contacts" | sed -E "s/^ ([^ ]+@[^ ]+)\. /\1/") )
+				tmenu "${contactEmails[@]}"
+
+				local contactEmail=""
+				for (( i=0 ; i<${#contactEmails[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${contactEmails[$i]}" ]]; then
+						contactEmail="${contactEmails[$i]}"
+						break
+					fi
+				done
+
+				if [[ ! -z "$contactEmail" ]]; then
+					read -rep 'Level (0:Read|1:Write|2:Full|3:Owner): (Read) ' shareLevel
+					echo
+					local shareResult="$(mega-share -a --with="$contactEmail" --level=$shareLevel "$1")"
+					if [[ ! -z "$shareResult" ]]; then
+						printf "$shareResult\n"
+					fi
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
+			else
+				echo "Not yet added any contact.\nShare only available for users in contacts."
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
+			;;
+
+		"Shared Folders" | "Shared Folders (All)")
+			local sharedFolders="$(mega-share "$1")"
+			if [[ $? -eq 0 && ! -z "$sharedFolders" ]]; then
+				local sharedTotal="$(grep -c "." <<< "$sharedFolders")"
+				local msg='Shared folders: '
+
+				if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
+					msg='Total shared folders: '
+				fi
+				printf "%s\033[1;32m%s\033[0m\n\n$sharedFolders\n" "$msg" "$sharedTotal"
+			elif [[ $? -eq 0 ]]; then
+				# bug can't check return $?
+				echo "Couldn't find anything shared below current folder."
+			fi
+			echo
+			read -rsn1 -p "Press any key to continue..." key
+			;;
+
+		"Disable Share")
+			local title="\033[41m Disable Share With Contact \033[0m\n\033[41m -------------------------- \033[0m\n\n"
+			printf "$title"
+
+			local contacts="$(mega-share "$1")"
+			if [[ ! -z "$contacts" ]]; then
+				local contactEmails=( 'All Contacts' $(grep -Eo "[^ ]+@[^ ]+" <<< "$contacts") )
+				tmenu "${contactEmails[@]}"
+
+				local shareResult=""
+				if [[ "$TMENU_RESULT" == 'All Contacts' ]]; then
+					shareResult="$(mega-share -d "$1")"
+				else
+					local contactEmail=""
+					for (( i=0 ; i<${#contactEmails[@]} ; i++ )); do
+						if [[ "$TMENU_RESULT" == "${contactEmails[$i]}" ]]; then
+							contactEmail="${contactEmails[$i]}"
+							break
+						fi
+					done
+
+					if [[ ! -z "$contactEmail" ]]; then
+						shareResult="$(mega-share -d --with="$contactEmail" "$1")"
+					fi
+				fi
+
+				if [[ ! -z "$shareResult" ]]; then
+					printf "$shareResult\n"
+				fi
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			else
+				echo
+				read -rsn1 -p "Press any key to continue..." key
+			fi
 			;;
 
 		"Usage")
