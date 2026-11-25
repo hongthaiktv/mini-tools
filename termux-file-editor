@@ -2199,12 +2199,32 @@ action.megaDir() {
 
 			if [[ $returnCmd -eq 0 && ! -z "$sharedFolders" ]]; then
 				local sharedTotal="$(grep -c "." <<< "$sharedFolders")"
-				local msg='Shared folders: '
+				local folderTotal=0
+				local sharedFoldersText=""
+				local sharedFolder=""
+
+				local prevIFS="$IFS"
+				while IFS= read -r line; do
+					local lineFolder="$(sed -E "s/^([^ ]+), .*/\1/" <<< "$line")"
+					local lineFolderEmail="$(sed -E "s/^.+(shared with.+)/\1/" <<< "$line" | sed -E "s/([^ ]+@[^ ]+)(.*)/\\\033[1;36m\1\\\033[0m\2/")"
+					if [[ "$lineFolder" != "$sharedFolder" ]]; then
+						if [[ ! -z "$sharedFolder" ]]; then
+							sharedFoldersText+="\n"
+						fi
+						sharedFoldersText+="Path: \033[1;34m$lineFolder\033[0m\n$lineFolderEmail\n"
+						(( ++folderTotal ))
+					else
+						sharedFoldersText+="$lineFolderEmail\n"
+					fi
+					sharedFolder="$lineFolder"
+				done <<< "$sharedFolders"
+				IFS="$prevIFS"
 
 				if [[ "$1" == '.' && "$MEGAWDIR" == '/' ]]; then
-					msg='Total shared folders: '
+					printf "Total Shareds: \033[1;36m%s\033[0m | Folders: \033[1;34m%s\033[0m\n\n$sharedFoldersText" "$sharedTotal" "$folderTotal"
+				else
+					printf "Shareds: \033[1;36m%s\033[0m | Folders: \033[1;34m%s\033[0m\n\n$sharedFoldersText" "$sharedTotal" "$folderTotal"
 				fi
-				printf "%s\033[1;32m%s\033[0m\n\n$sharedFolders\n" "$msg" "$sharedTotal"
 			elif [[ $returnCmd -eq 0 ]]; then
 				echo "Couldn't find anything shared below current folder."
 			fi
