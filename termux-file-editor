@@ -1734,10 +1734,12 @@ action.megaMenu() {
 			;;
 
 		"Transfer Logs (Esc+t)" | "$ESC_KEY"'t')
-			local transferLogs="$(mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS)"
+			local transferLogs=""
+			transferLogs="$(mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS)"
+			local returnCmd=$?
 			if [[ ! -z "$transferLogs" ]]; then
 				echo "$transferLogs"
-			elif [[ $? -eq 0 ]]; then
+			elif [[ $returnCmd -eq 0 ]]; then
 				echo "Nothing logged."
 			fi
 			echo
@@ -2111,12 +2113,15 @@ action.megaDir() {
 			;;
 
 		"Exported Links" | "Exported Links (All)")
-			local exportLinks="$(mega-export "$1")"
+			local exportLinks=""
+			exportLinks="$(mega-export "$1")"
+			local returnCmd=$?
+
 # 			bug check null result $? = 0 (53)
 # 			run exportLinks="$(mega-export "$1")" at other terminal empty result $? = 53
 # 			output code 53 return text to stdout instead stderr
 
-			if [[ $? -eq 0 && "$exportLinks" != "Couldn't find anything exported"* ]]; then
+			if [[ $returnCmd -eq 0 ]]; then
 				exportLinks="$(grep "^[^ ]" <<< "$exportLinks")"
 				local exportTotal="$(grep -c "." <<< "$exportLinks")"
 				local msg='Exported links: '
@@ -2188,8 +2193,11 @@ action.megaDir() {
 			;;
 
 		"Shared Folders" | "Shared Folders (All)")
-			local sharedFolders="$(mega-share "$1")"
-			if [[ $? -eq 0 && ! -z "$sharedFolders" ]]; then
+			local sharedFolders=""
+			sharedFolders="$(mega-share "$1")"
+			local returnCmd=$?
+
+			if [[ $returnCmd -eq 0 && ! -z "$sharedFolders" ]]; then
 				local sharedTotal="$(grep -c "." <<< "$sharedFolders")"
 				local msg='Shared folders: '
 
@@ -2197,8 +2205,7 @@ action.megaDir() {
 					msg='Total shared folders: '
 				fi
 				printf "%s\033[1;32m%s\033[0m\n\n$sharedFolders\n" "$msg" "$sharedTotal"
-			elif [[ $? -eq 0 ]]; then
-				# bug can't check return $?
+			elif [[ $returnCmd -eq 0 ]]; then
 				echo "Couldn't find anything shared below current folder."
 			fi
 			echo
@@ -2691,10 +2698,12 @@ tmenu.megaExplorer() {
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'r' ]]; then
 			mega-reload
 		elif [[ "$TMENU_RESULT" == "$ESC_KEY"'t' ]]; then
-			local transferLogs="$(mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS)"
+			local transferLogs=""
+			transferLogs="$(mega-transfers --show-completed --limit=50 --output-cols=TYPE,TAG,SOURCEPATH,DESTINYPATH,PROGRESS)"
+			local returnCmd=$?
 			if [[ ! -z "$transferLogs" ]]; then
 				echo "$transferLogs"
-			elif [[ $? -eq 0 ]]; then
+			elif [[ $returnCmd -eq 0 ]]; then
 				echo "Nothing logged."
 			fi
 			echo
