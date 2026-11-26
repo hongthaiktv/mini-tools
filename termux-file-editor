@@ -34,9 +34,30 @@ tmenu.loadConfig() {
 						megaLoginUser="$configValue"
 						;;
 
+					"megaLoginUsers")
+						whileIFS="$IFS"
+						IFS='|'
+						configValue=( $(sed -E "s/^$configName: //" <<< "$line") )
+						IFS="$whileIFS"
+						megaLoginUsers=( "${configValue[@]}" )
+						;;
+
 					"megaLoginLink")
 						megaLoginLink="$configValue"
 						megaLoginLinkDirName="$configExtraValue"
+						;;
+
+					"megaLoginLinks")
+						megaLoginLinks=()
+						whileIFS="$IFS"
+						IFS='|'
+						configValue=( $(sed -E "s/^$configName: //" <<< "$line") )
+						IFS="$whileIFS"
+						for (( i=0 ; i<${#configValue[@]} ; i++ )); do
+							local linkDirName=( "$(grep -Eo "[^@]+$" <<< "${configValue[$i]}")" )
+							local loginLink=( "$(grep -Eo "^[^@]+" <<< "${configValue[$i]}")" )
+							megaLoginLinks+=( "$linkDirName | $loginLink" )
+						done
 						;;
 				esac
 			done < "$HOME/.tfe/config"
@@ -53,7 +74,9 @@ tmenu.loadConfig() {
 				echo "megaSrcDir: /" >> "$HOME/.tfe/config"
 				echo "megaDstDir: /" >> "$HOME/.tfe/config"
 				echo "megaLoginUser: null" >> "$HOME/.tfe/config"
+				echo "megaLoginUsers: null" >> "$HOME/.tfe/config"
 				echo "megaLoginLink: null" >> "$HOME/.tfe/config"
+				echo "megaLoginLinks: null" >> "$HOME/.tfe/config"
 			fi
 		fi
 	else
@@ -63,7 +86,9 @@ tmenu.loadConfig() {
 		echo "megaSrcDir: /" >> "$HOME/.tfe/config"
 		echo "megaDstDir: /" >> "$HOME/.tfe/config"
 		echo "megaLoginUser: null" >> "$HOME/.tfe/config"
+		echo "megaLoginUsers: null" >> "$HOME/.tfe/config"
 		echo "megaLoginLink: null" >> "$HOME/.tfe/config"
+		echo "megaLoginLinks: null" >> "$HOME/.tfe/config"
 	fi
 }
 
@@ -955,6 +980,9 @@ tmenu.fileExplorer() {
 }
 
 megaLogin() {
+	local recentlyLoginUser=""
+	local recentlyLoginLink=""
+	local recentlyLoginLinkDirName=""
 	tmenu.loadConfig
 	mega-session &> /dev/null
 	if [[ $? -eq 0 ]]; then
@@ -969,25 +997,67 @@ megaLogin() {
 
 	until [[ "$TMENU_RESULT" == 'EXIT' || "$TMENU_RESULT" == 'MAINMENU' ]]; do
 		clear
-		local title="\033[41m #### MEGA LOGIN #### \033[0m\n\033[41m -------------------- \033[0m\n\n"
+		local title="\033[41m #######  MEGA LOGIN  ####### \033[0m\n\033[41m ---------------------------- \033[0m\n\n (Esc+u: Users | Esc+l: Links)\n\n"
 		printf "$title"
-		local loginMethods=( "Email and Password" "Shared Link" "Session ID" "____________________" "" "Create account" )
+		local loginMethods=( "Email and Password" "Shared Link" "Session ID" "___________________" "" "Create account" )
 		unset MEGA_FILE_TYPES
-		tmenu "${loginMethods[@]}"
+
+		if [[ "$TMENU_RESULT" != 'Email and Password' && "$TMENU_RESULT" != 'Shared Link' ]]; then
+			tmenu "${loginMethods[@]}"
+		elif [[ "$TMENU_RESULT" == 'Email and Password' ]]; then
+			printf "\033[91m>>\033[0m \033[46mEmail and Password\033[0m\n   Shared Link\n   Session ID\n   ___________________\n\n   Create account\n\n"
+		elif [[ "$TMENU_RESULT" == 'Shared Link' ]]; then
+			printf "   Email and Password\n\033[91m>>\033[0m \033[46mShared Link\033[0m\n   Session ID\n   ___________________\n\n   Create account\n\n"
+		fi
 
 		case "$TMENU_RESULT" in
 			"$ESC_KEY")
 				return -1
 				;;
 
+			"$ESC_KEY"'u')
+				local title="\033[41m Recently Login Users \033[0m\n\033[41m -------------------- \033[0m\n\n"
+				printf "$title"
+				tmenu "${megaLoginUsers[@]}"
+
+				for (( i=0 ; i<${#megaLoginUsers[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${megaLoginUsers[$i]}" ]]; then
+						recentlyLoginUser="$TMENU_RESULT"
+						TMENU_RESULT='Email and Password'
+						break
+					fi
+				done
+				;;
+
+			"$ESC_KEY"'l')
+				local title="\033[41m Recently Login Links \033[0m\n\033[41m -------------------- \033[0m\n\n"
+				printf "$title"
+				tmenu "${megaLoginLinks[@]}"
+
+				for (( i=0 ; i<${#megaLoginLinks[@]} ; i++ )); do
+					if [[ "$TMENU_RESULT" == "${megaLoginLinks[$i]}" ]]; then
+						recentlyLoginLink="$(sed -E "s/^.+\| //" <<< "$TMENU_RESULT")"
+						recentlyLoginLinkDirName="$(sed -E "s/^([^|]+) \| .*/\1/" <<< "$TMENU_RESULT")"
+						TMENU_RESULT='Shared Link'
+						break
+					fi
+				done
+				;;
+
 			"Email and Password")
 				local megaLoginName="new"
-				if [[ ! -z "$megaLoginUser" && "$megaLoginUser" != "null" ]]; then
-					megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
+				if [[ ! -z "$recentlyLoginUser" ]]; then
+						megaLoginName="$(grep -Eo "^[^@]+" <<< "$recentlyLoginUser")"
+						megaLoginUser="$recentlyLoginUser"
+				else
+					if [[ ! -z "$megaLoginUser" && "$megaLoginUser" != "null" ]]; then
+						megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
+					fi
 				fi
 
 				read -rep $'Username: (c)ancel/(\033[1;32m'"$megaLoginName"$'\033[0m) ' megauser
 				if [[ "$megauser" == 'c' || "$megauser" == 'C' || ("$megaLoginName" == 'new' && -z "$megauser") ]]; then
+					unset TMENU_RESULT
 					continue
 				fi
 
@@ -1018,12 +1088,17 @@ megaLogin() {
 				local megaLinkDirName=""
 				local megaShortLink="new"
 
-				if [[ ! -z "$megaLoginLinkDirName" ]]; then
-					megaLinkDirName="$megaLoginLinkDirName"
-				fi
-
-				if [[ ! -z "$megaLoginLink" && "$megaLoginLink" != "null" ]]; then
-					megaShortLink="$(grep -Eo "^.{12}" <<< "$megaLoginLink")...$(grep -Eo ".{5}$" <<< "$megaLoginLink")"
+				if [[ ! -z "$recentlyLoginLink" ]]; then
+					megaLinkDirName="$recentlyLoginLinkDirName"
+					megaShortLink="$(grep -Eo "^.{12}" <<< "$recentlyLoginLink")...$(grep -Eo ".{5}$" <<< "$recentlyLoginLink")"
+					megaLoginLink="$recentlyLoginLink"
+				else
+					if [[ ! -z "$megaLoginLinkDirName" ]]; then
+						megaLinkDirName="$megaLoginLinkDirName"
+					fi
+					if [[ ! -z "$megaLoginLink" && "$megaLoginLink" != "null" ]]; then
+						megaShortLink="$(grep -Eo "^.{12}" <<< "$megaLoginLink")...$(grep -Eo ".{5}$" <<< "$megaLoginLink")"
+					fi
 				fi
 
 				local msg=""
@@ -1035,6 +1110,7 @@ megaLogin() {
 
 				read -rep "$msg" megaLink
 				if [[ "$megaLink" == 'c' || "$megaLink" == 'C' || ("$megaShortLink" == 'new' && -z "$megaLink") ]]; then
+					unset TMENU_RESULT
 					continue
 				fi
 
@@ -1165,7 +1241,7 @@ getMegaUsedStorage() {
 		megaUsedInbox="$(grep -i 'inbox' <<< "$megaUsage" | sed -E s/^.{24}/'Inbox: '/ | sed -E s/' and'//)"
 		megaUsedTrashBin="$(grep -i 'rubbish' <<< "$megaUsage" | sed -E s/^.{24}/'Trash: '/ | sed -E s/' and'//)"
 	else
-		megaUsedStorage=$'Shared Directory: \033[1;34m'"$(mega-pwd | sed -E "s|^\/([^/]*).*|\1|")"
+		megaUsedStorage=$'Shared Link Folder: \033[1;34m'"$(mega-pwd | sed -E "s|^\/([^/]*).*|\1|")"
 		megaUsedStorageLength=$(( ${#megaUsedStorage} - 7 ))
 	fi
 }
@@ -2531,7 +2607,7 @@ action.megaFile() {
 
 tmenu.megaExplorer() {
 	megaLogin
-	if [[ $? -ne 0 ]]; then
+	if [[ $? -ne 0 || "$TMENU_RESULT" == 'EXIT' ]]; then
 		return -1
 	fi
 
