@@ -217,6 +217,8 @@ Using 'source /path/tmenu.sh' to add to your script before call tmenu.
 				printf "   \033[%sm%s\033[0m\n" "92" "$list_item"
 			elif [[ "${MEGA_FILE_TYPES[$i - 1]}" == 'inShare' ]]; then
 				printf "   \033[1;36m%s\033[0m:\033[1;34m%s\033[0m\n" "$(grep -Eo "^[^:]+" <<< "$list_item")" "$(grep -Eo "[^:]+$" <<< "$list_item")"
+			elif [[ "${MEGA_FILE_TYPES[$i - 1]}" == 'formatFirstElementBlue' ]]; then
+				printf "   \033[1;34m%s\033[0m|%s\n" "$(grep -Eo "^[^|]+" <<< "$list_item")" "$(grep -Eo "[^|]+$" <<< "$list_item")"
 			else
 				printf "   \033[%sm%s\033[0m\n" "$OPTION_COLOR" "$list_item"
 			fi

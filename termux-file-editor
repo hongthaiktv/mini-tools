@@ -35,11 +35,14 @@ tmenu.loadConfig() {
 						;;
 
 					"megaLoginUsers")
-						whileIFS="$IFS"
-						IFS='|'
-						configValue=( $(sed -E "s/^$configName: //" <<< "$line") )
-						IFS="$whileIFS"
-						megaLoginUsers=( "${configValue[@]}" )
+						megaLoginUsers="$(sed -E "s/^$configName: //" <<< "$line")"
+						if [[ "$megaLoginUsers" != "null" ]]; then
+							whileIFS="$IFS"
+							IFS='|'
+							configValue=( $(sed -E "s/^$configName: //" <<< "$line") )
+							IFS="$whileIFS"
+							megaLoginUsers=( "${configValue[@]}" )
+						fi
 						;;
 
 					"megaLoginLink")
@@ -48,16 +51,19 @@ tmenu.loadConfig() {
 						;;
 
 					"megaLoginLinks")
-						megaLoginLinks=()
-						whileIFS="$IFS"
-						IFS='|'
-						configValue=( $(sed -E "s/^$configName: //" <<< "$line") )
-						IFS="$whileIFS"
-						for (( i=0 ; i<${#configValue[@]} ; i++ )); do
-							local linkDirName=( "$(grep -Eo "[^@]+$" <<< "${configValue[$i]}")" )
-							local loginLink=( "$(grep -Eo "^[^@]+" <<< "${configValue[$i]}")" )
-							megaLoginLinks+=( "$linkDirName | $loginLink" )
-						done
+						megaLoginLinks="$(sed -E "s/^$configName: //" <<< "$line")"
+						if [[ "$megaLoginLinks" != "null" ]]; then
+							megaLoginLinks=()
+							whileIFS="$IFS"
+							IFS='|'
+							configValue=( $(sed -E "s/^$configName: //" <<< "$line") )
+							IFS="$whileIFS"
+							for (( i=0 ; i<${#configValue[@]} ; i++ )); do
+								local linkDirName="$(grep -Eo "[^@]+$" <<< "${configValue[$i]}")"
+								local loginLink="$(grep -Eo "^[^@]+" <<< "${configValue[$i]}")"
+								megaLoginLinks+=( "$linkDirName | $loginLink" )
+							done
+						fi
 						;;
 				esac
 			done < "$HOME/.tfe/config"
@@ -980,9 +986,6 @@ tmenu.fileExplorer() {
 }
 
 megaLogin() {
-	local recentlyLoginUser=""
-	local recentlyLoginLink=""
-	local recentlyLoginLinkDirName=""
 	tmenu.loadConfig
 	mega-session &> /dev/null
 	if [[ $? -eq 0 ]]; then
@@ -1016,43 +1019,54 @@ megaLogin() {
 				;;
 
 			"$ESC_KEY"'u')
-				local title="\033[41m Recently Login Users \033[0m\n\033[41m -------------------- \033[0m\n\n"
+				local title="\033[41m Recently Users Login \033[0m\n\033[41m -------------------- \033[0m\n\n"
 				printf "$title"
-				tmenu "${megaLoginUsers[@]}"
+				if [[ "$megaLoginUsers" != "null" ]]; then
+					tmenu "${megaLoginUsers[@]}"
 
-				for (( i=0 ; i<${#megaLoginUsers[@]} ; i++ )); do
-					if [[ "$TMENU_RESULT" == "${megaLoginUsers[$i]}" ]]; then
-						recentlyLoginUser="$TMENU_RESULT"
-						TMENU_RESULT='Email and Password'
-						break
-					fi
-				done
+					for (( i=0 ; i<${#megaLoginUsers[@]} ; i++ )); do
+						if [[ "$TMENU_RESULT" == "${megaLoginUsers[$i]}" ]]; then
+							megaLoginUser="$TMENU_RESULT"
+							TMENU_RESULT='Email and Password'
+							break
+						fi
+					done
+				else
+					echo "No recently user login."
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
 				;;
 
 			"$ESC_KEY"'l')
-				local title="\033[41m Recently Login Links \033[0m\n\033[41m -------------------- \033[0m\n\n"
+				local title="\033[41m Recently Links Login \033[0m\n\033[41m -------------------- \033[0m\n\n"
 				printf "$title"
-				tmenu "${megaLoginLinks[@]}"
+				if [[ "$megaLoginLinks" != "null" ]]; then
+					MEGA_FILE_TYPES=()
+					for (( i=0 ; i<${#megaLoginLinks[@]} ; i++ )); do
+						MEGA_FILE_TYPES+=( 'formatFirstElementBlue' )
+					done
+					tmenu "${megaLoginLinks[@]}"
 
-				for (( i=0 ; i<${#megaLoginLinks[@]} ; i++ )); do
-					if [[ "$TMENU_RESULT" == "${megaLoginLinks[$i]}" ]]; then
-						recentlyLoginLink="$(sed -E "s/^.+\| //" <<< "$TMENU_RESULT")"
-						recentlyLoginLinkDirName="$(sed -E "s/^([^|]+) \| .*/\1/" <<< "$TMENU_RESULT")"
-						TMENU_RESULT='Shared Link'
-						break
-					fi
-				done
+					for (( i=0 ; i<${#megaLoginLinks[@]} ; i++ )); do
+						if [[ "$TMENU_RESULT" == "${megaLoginLinks[$i]}" ]]; then
+							megaLoginLink="$(sed -E "s/^.+\| //" <<< "$TMENU_RESULT")"
+							megaLoginLinkDirName="$(sed -E "s/^([^|]+) \| .*/\1/" <<< "$TMENU_RESULT")"
+							TMENU_RESULT='Shared Link'
+							break
+						fi
+					done
+				else
+					echo "No recently link login."
+					echo
+					read -rsn1 -p "Press any key to continue..." key
+				fi
 				;;
 
 			"Email and Password")
 				local megaLoginName="new"
-				if [[ ! -z "$recentlyLoginUser" ]]; then
-						megaLoginName="$(grep -Eo "^[^@]+" <<< "$recentlyLoginUser")"
-						megaLoginUser="$recentlyLoginUser"
-				else
-					if [[ ! -z "$megaLoginUser" && "$megaLoginUser" != "null" ]]; then
-						megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
-					fi
+				if [[ ! -z "$megaLoginUser" && "$megaLoginUser" != "null" ]]; then
+					megaLoginName="$(grep -Eo "^[^@]+" <<< "$megaLoginUser")"
 				fi
 
 				read -rep $'Username: (c)ancel/(\033[1;32m'"$megaLoginName"$'\033[0m) ' megauser
@@ -1079,7 +1093,22 @@ megaLogin() {
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
-					sed -Ei s/"^(megaLoginUser: ).*"/"\1$megauser"/ "$HOME/.tfe/config"
+					sed -Ei "s/^(megaLoginUser: ).*/\1$megauser/" "$HOME/.tfe/config"
+					local existUser=""
+					for (( i=0 ; i<${#megaLoginUsers[@]} ; i++ )); do
+						if [[ "$megauser" == "${megaLoginUsers[$i]}" ]]; then
+							existUser="$megauser"
+							break
+						fi
+					done
+
+					if [[ -z "$existUser" ]]; then
+						if [[ "$megaLoginUsers" != "null" ]]; then
+							sed -Ei "s/^(megaLoginUsers: )(.*)/\1$megauser\|\2/" "$HOME/.tfe/config"
+						else
+							sed -Ei "s/^(megaLoginUsers: )(.*)/\1$megauser/" "$HOME/.tfe/config"
+						fi
+					fi
 					break
 				fi
 				;;
@@ -1087,18 +1116,11 @@ megaLogin() {
 			"Shared Link")
 				local megaLinkDirName=""
 				local megaShortLink="new"
-
-				if [[ ! -z "$recentlyLoginLink" ]]; then
-					megaLinkDirName="$recentlyLoginLinkDirName"
-					megaShortLink="$(grep -Eo "^.{12}" <<< "$recentlyLoginLink")...$(grep -Eo ".{5}$" <<< "$recentlyLoginLink")"
-					megaLoginLink="$recentlyLoginLink"
-				else
-					if [[ ! -z "$megaLoginLinkDirName" ]]; then
-						megaLinkDirName="$megaLoginLinkDirName"
-					fi
-					if [[ ! -z "$megaLoginLink" && "$megaLoginLink" != "null" ]]; then
-						megaShortLink="$(grep -Eo "^.{12}" <<< "$megaLoginLink")...$(grep -Eo ".{5}$" <<< "$megaLoginLink")"
-					fi
+				if [[ ! -z "$megaLoginLinkDirName" ]]; then
+					megaLinkDirName="$megaLoginLinkDirName"
+				fi
+				if [[ ! -z "$megaLoginLink" && "$megaLoginLink" != "null" ]]; then
+					megaShortLink="$(grep -Eo "^.{12}" <<< "$megaLoginLink")...$(grep -Eo ".{5}$" <<< "$megaLoginLink")"
 				fi
 
 				local msg=""
@@ -1133,6 +1155,23 @@ megaLogin() {
 					megauser='Shared Link'
 					megaLinkDirName="$(basename "$(mega-pwd)")"
 					sed -Ei "s|^(megaLoginLink: ).*|\1$megaLink\|$megaLinkDirName|" "$HOME/.tfe/config"
+
+					local existLink=""
+					for (( i=0 ; i<${#megaLoginLinks[@]} ; i++ )); do
+						local loginLink="$(sed -E "s/^.+\| //" <<< "${megaLoginLinks[$i]}")"
+						if [[ "$megaLink" == "$loginLink" ]]; then
+							existLink="$megaLink"
+							break
+						fi
+					done
+
+					if [[ -z "$existLink" ]]; then
+						if [[ "$megaLoginLinks" != "null" ]]; then
+							sed -Ei "s|^(megaLoginLinks: )(.*)|\1$megaLink@$megaLinkDirName\|\2|" "$HOME/.tfe/config"
+						else
+							sed -Ei "s|^(megaLoginLinks: )(.*)|\1$megaLink@$megaLinkDirName|" "$HOME/.tfe/config"
+						fi
+					fi
 					break
 				fi
 				;;
