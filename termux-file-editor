@@ -1142,16 +1142,32 @@ megaLogin() {
 				read -rep "Auth Key: (none) " authKey
 				echo
 
+				local loginResult=""
 				if [[ -z "$authKey" ]]; then
-					mega-login "$megaLink"
+					loginResult="$(mega-login "$megaLink" &> /dev/stdout)"
 				else
-					mega-login "$megaLink" --auth-key="$authKey"
+					loginResult="$(mega-login "$megaLink" --auth-key="$authKey" &> /dev/stdout)"
 				fi
+				local returnCmd=$?
 
-				if [[ $? -ne 0 ]]; then
+				if [[ $returnCmd -ne 0 ]]; then
+					if [[ $returnCmd -eq 2 ]]; then
+						echo "Only shared folder link acceptable."
+					else
+						echo "$loginResult"
+					fi
 					echo
 					read -rsn1 -p "Press any key to continue..." key
 				else
+					local isLinkOk="$(mega-ls)"
+					if [[ "$isLinkOk" == 'NO_KEY'* ]]; then
+						echo "Invalid shared folder link."
+						mega-logout 1> /dev/null
+						echo
+						read -rsn1 -p "Press any key to continue..." key
+						continue
+					fi
+
 					megauser='Shared Link'
 					megaLinkDirName="$(basename "$(mega-pwd)")"
 					sed -Ei "s|^(megaLoginLink: ).*|\1$megaLink\|$megaLinkDirName|" "$HOME/.tfe/config"
